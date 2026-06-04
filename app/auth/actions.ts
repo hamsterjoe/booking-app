@@ -14,9 +14,10 @@ export async function register(formData: FormData) {
     password,
   });
 
-  if (error) {
-    redirect("/register?error=Could not create account");
-  }
+if (error) {
+  console.error("Registration error:", error.message);
+  redirect(`/register?error=${encodeURIComponent(error.message)}`);
+}
 
   redirect("/login?message=Check your email to confirm your account");
 }
