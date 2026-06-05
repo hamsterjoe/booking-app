@@ -5,8 +5,8 @@ import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Booking App",
-  description: "A booking website built with Next.js and Supabase.",
+  title: "Picko",
+  description: "Picko - Elevating pickleball play experience",
 };
 
 type RootLayoutProps = {
