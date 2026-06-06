@@ -19,7 +19,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            User dashboard
+            Picko dashboard
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-slate-950">
@@ -38,20 +38,20 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">
-            Upcoming bookings
+            Upcoming court bookings
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            Your upcoming bookings will appear here once we build the booking
+            Your upcoming Picko court bookings will appear here once we build the booking
             system.
           </p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">
-            Booking history
+            Court Booking history
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            Past bookings will appear here after we connect the database tables.
+            Past court bookings will appear here after we connect the database tables.
           </p>
         </div>
 
