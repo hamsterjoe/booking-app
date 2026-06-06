@@ -5,16 +5,16 @@ export default function HomePage() {
     <section className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 lg:flex-row lg:items-center lg:py-24">
       <div className="max-w-2xl">
         <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-blue-600">
-          Simple booking website
+          Picko Pickleball
         </p>
 
         <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-          Book appointments without the back-and-forth.
+          Book pickleball courts at your fingertips.
         </h1>
 
         <p className="mt-6 text-lg leading-8 text-slate-600">
-          A beginner-friendly full-stack booking app built with Next.js,
-          TypeScript, Tailwind CSS, and Supabase.
+          A beginner-friendly full-stack pickleball court booking app built with Next.js,
+          TypeScript, Tailwind CSS, and Supabase. Find your next game today.
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
