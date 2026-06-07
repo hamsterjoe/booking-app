@@ -95,10 +95,10 @@ export default async function CourtsPage() {
                 </div>
 
                   <Link
-                href={`/courts/${court.id}`}
+                href="/bookings/new"
                 className="mt-6 block rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
                   >
-                View available slots
+                Book a court
               </Link>
               </div>
             </article>

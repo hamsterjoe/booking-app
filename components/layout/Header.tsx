@@ -6,6 +6,10 @@ const navLinks = [
     href: "/",
   },
   {
+    label: "Book",
+    href: "/bookings/new",
+  },
+  {
     label: "Courts",
     href: "/courts",
   },
