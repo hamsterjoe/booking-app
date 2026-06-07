@@ -39,12 +39,13 @@ export default function HomePage() {
 
         <ul className="mt-4 space-y-3 text-sm text-slate-600">
           <li>✅ Project setup</li>
-          <li>🚧 Basic layout and navigation</li>
-          <li>⬜ Supabase authentication</li>
-          <li>⬜ User dashboard</li>
-          <li>⬜ Booking system</li>
-          <li>⬜ Booking history</li>
-          <li>⬜ Deployment to Vercel</li>
+          <li>✅ Basic layout and navigation</li>
+          <li>✅ Supabase authentication</li>
+          <li>✅ User dashboard</li>
+          <li>✅ Booking system</li>
+          <li>✅ Booking history</li>
+          <li>✅ Deployment to Vercel</li>
+          <li>⬜ RM75,000 MRR</li>
         </ul>
       </div>
     </section>
