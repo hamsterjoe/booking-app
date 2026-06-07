@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cancelBooking } from "@/app/bookings/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Court = {
@@ -24,11 +25,51 @@ type Booking = {
   court_slots: CourtSlot | null;
 };
 
+type BookingsPageProps = {
+    searchParams: Promise<{
+      message?: string;
+      error?: string;
+    }>;
+  };
+
 function formatPrice(cents: number) {
   return new Intl.NumberFormat("en-MY", {
     style: "currency",
     currency: "MYR",
   }).format(cents / 100);
+}
+
+function isActiveBooking(status: Booking["status"]) {
+    return status === "pending" || status === "confirmed";
+}
+  
+function canCancelBooking(booking: Booking) {
+    const startTime = booking.court_slots?.start_time;
+
+    if (!startTime) {
+        return false;
+    }
+
+    const sixHoursFromNow = Date.now() + 6 * 60 * 60 * 1000;
+
+    return (
+        isActiveBooking(booking.status) &&
+        new Date(startTime).getTime() > sixHoursFromNow
+    );
+}
+  
+function isWithinCancellationCutoff(booking: Booking) {
+    const startTime = booking.court_slots?.start_time;
+
+    if (!startTime) {
+        return false;
+    }
+
+    return (
+        isActiveBooking(booking.status) &&
+        new Date(startTime).getTime() > Date.now() &&
+        !canCancelBooking(booking)
+    );
 }
 
 function formatBookingDate(dateTime: string) {
@@ -131,11 +172,31 @@ function BookingCard({ booking }: { booking: Booking }) {
           <p>{formatPrice(booking.total_price_cents)}</p>
         </div>
       </div>
+
+      {canCancelBooking(booking) ? (
+        <form action={cancelBooking} className="mt-5">
+            <input type="hidden" name="bookingId" value={booking.id} />
+
+            <button
+            type="submit"
+            className="w-full rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+            >
+            Cancel booking
+            </button>
+        </form>
+        ) : isWithinCancellationCutoff(booking) ? (
+        <p className="mt-5 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            This booking can no longer be cancelled because it starts within 6 hours.
+        </p>
+        ) : null}
+
     </article>
   );
 }
 
-export default async function BookingsPage() {
+export default async function BookingsPage({ searchParams }: BookingsPageProps) {
+    const params = await searchParams;
+
   const supabase = await createSupabaseServerClient();
 
   const {
@@ -213,6 +274,23 @@ export default async function BookingsPage() {
 
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12">
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+        Cancellations are allowed up to 6 hours before your court time.
+        </div>
+
+        {params.message ? (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+            {params.message}
+        </div>
+        ) : null}
+
+        {params.error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {params.error}
+        </div>
+        ) : null}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">

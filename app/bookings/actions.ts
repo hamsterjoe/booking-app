@@ -54,3 +54,45 @@ export async function createBooking(formData: FormData) {
     buildBookingRedirectPath(date, "message", "Your court booking is confirmed."),
   );
 }
+
+function buildBookingsRedirectPath(type: "message" | "error", text: string) {
+    const params = new URLSearchParams();
+  
+    params.set(type, text);
+  
+    return `/bookings?${params.toString()}`;
+  }
+  
+  export async function cancelBooking(formData: FormData) {
+    const bookingId = String(formData.get("bookingId") ?? "");
+  
+    if (!bookingId) {
+      redirect(buildBookingsRedirectPath("error", "Missing selected booking."));
+    }
+  
+    const supabase = await createSupabaseServerClient();
+  
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+  
+    if (!user) {
+      redirect("/login?error=Please log in to cancel a booking");
+    }
+  
+    const { error } = await supabase.rpc("cancel_booking", {
+      p_booking_id: bookingId,
+    });
+  
+    if (error) {
+      redirect(buildBookingsRedirectPath("error", error.message));
+    }
+  
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
+    revalidatePath("/bookings/new");
+  
+    redirect(
+      buildBookingsRedirectPath("message", "Your booking has been cancelled."),
+    );
+  }
