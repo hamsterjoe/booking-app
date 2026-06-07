@@ -47,7 +47,23 @@ export async function Header() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const navLinks = user ? authNavLinks : publicNavLinks;
+  let isAdmin = false;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    isAdmin = profile?.role === "admin";
+  }
+
+  const navLinks = user
+    ? isAdmin
+      ? [...authNavLinks, { label: "Admin", href: "/admin" }]
+      : authNavLinks
+    : publicNavLinks;
   const logoHref = user ? "/dashboard" : "/";
 
   return (
