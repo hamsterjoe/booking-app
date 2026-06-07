@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createBooking } from "@/app/bookings/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Court = {
@@ -19,6 +20,8 @@ type CourtSlot = {
 type BookingPageProps = {
   searchParams: Promise<{
     date?: string;
+    message?: string;
+    error?: string;
   }>;
 };
 
@@ -123,6 +126,10 @@ export default async function NewBookingPage({
 
   const supabase = await createSupabaseServerClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: slots, error } = await supabase
     .from("court_slots")
     .select(
@@ -194,6 +201,18 @@ export default async function NewBookingPage({
           </button>
         </div>
       </form>
+
+      {params.message ? (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+            {params.message}
+        </div>
+        ) : null}
+
+        {params.error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {params.error}
+        </div>
+        ) : null}
 
       <div>
         <h2 className="text-2xl font-bold text-slate-950">
@@ -275,13 +294,26 @@ export default async function NewBookingPage({
                           {formatPrice(court.price_per_hour_cents)} / hour
                         </p>
 
-                        <button
-                          type="button"
-                          disabled
-                          className="mt-4 w-full rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
-                        >
-                          Booking coming next
-                        </button>
+                        {user ? (
+                            <form action={createBooking} className="mt-4">
+                                <input type="hidden" name="slotId" value={slot.id} />
+                                <input type="hidden" name="date" value={selectedDate} />
+
+                                <button
+                                type="submit"
+                                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                                >
+                                Book this court
+                                </button>
+                            </form>
+                            ) : (
+                            <Link
+                                href="/login?error=Please log in to book a court"
+                                className="mt-4 block w-full rounded-lg bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-slate-800"
+                            >
+                                Log in to book
+                            </Link>
+                        )}
                       </div>
                     );
                   })}
