@@ -10,6 +10,10 @@ const navLinks = [
     href: "/bookings/new",
   },
   {
+    label: "My bookings",
+    href: "/bookings",
+  },
+  {
     label: "Courts",
     href: "/courts",
   },
