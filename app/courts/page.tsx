@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Court = {
@@ -92,6 +93,13 @@ export default async function CourtsPage() {
                   <p className="font-medium text-slate-900">Price</p>
                   <p>{formatPrice(court.price_per_hour_cents)} / hour</p>
                 </div>
+
+                  <Link
+                href={`/courts/${court.id}`}
+                className="mt-6 block rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                View available slots
+              </Link>
               </div>
             </article>
           ))}
