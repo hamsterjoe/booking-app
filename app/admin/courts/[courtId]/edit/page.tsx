@@ -67,7 +67,7 @@ export default async function EditCourtPage({
         <h1 className="mt-2 text-3xl font-bold text-slate-950">Edit court</h1>
 
         <p className="mt-3 max-w-2xl text-slate-600">
-          Update this court's basic details. Active and inactive status is
+          Update this court&apos;s basic details. Active and inactive status is
           still managed from the main courts page.
         </p>
       </div>

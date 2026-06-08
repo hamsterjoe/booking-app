@@ -18,12 +18,20 @@ type CourtSlot = {
     courts: Court | null;
 };
 
+type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
 type Booking = {
     id: string;
-    status: "pending" | "confirmed" | "cancelled" | "completed";
+    status: BookingStatus;
     total_price_cents: number;
     created_at: string;
     court_slots: CourtSlot | null;
+};
+
+type BookingGroup = {
+    dateKey: string;
+    dateLabel: string;
+    bookings: Booking[];
 };
 
 type BookingsPageProps = {
@@ -108,18 +116,87 @@ function getStatusClasses(status: Booking["status"]) {
     return "bg-slate-100 text-slate-700";
 }
 
+function getEffectiveBookingStatus(booking: Booking): BookingStatus {
+    if (booking.status !== "confirmed") {
+        return booking.status;
+    }
+
+    const endTime = booking.court_slots?.end_time;
+
+    if (!endTime) {
+        return booking.status;
+    }
+
+    const hasEnded = new Date(endTime).getTime() < Date.now();
+
+    return hasEnded ? "completed" : booking.status;
+}
+
 function sortBookingsByStartTime(bookings: Booking[]) {
     return [...bookings].sort((a, b) => {
-        const aTime = a.court_slots?.start_time ?? "";
-        const bTime = b.court_slots?.start_time ?? "";
+        const aTime = a.court_slots?.start_time;
+        const bTime = b.court_slots?.start_time;
+
+        if (!aTime && !bTime) {
+            return b.created_at.localeCompare(a.created_at);
+        }
+
+        if (!aTime) {
+            return 1;
+        }
+
+        if (!bTime) {
+            return -1;
+        }
 
         return aTime.localeCompare(bTime);
     });
 }
 
+function getBookingDateKey(booking: Booking) {
+    const startTime = booking.court_slots?.start_time;
+
+    if (!startTime) {
+        return "unknown";
+    }
+
+    return new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: "Asia/Kuala_Lumpur",
+    }).format(new Date(startTime));
+}
+
+function groupBookingsByDate(bookings: Booking[]) {
+    const groups: BookingGroup[] = [];
+
+    for (const booking of bookings) {
+        const dateKey = getBookingDateKey(booking);
+        const dateLabel = booking.court_slots
+            ? formatBookingDate(booking.court_slots.start_time)
+            : "Unknown date";
+
+        const existingGroup = groups.find((group) => group.dateKey === dateKey);
+
+        if (existingGroup) {
+            existingGroup.bookings.push(booking);
+        } else {
+            groups.push({
+                dateKey,
+                dateLabel,
+                bookings: [booking],
+            });
+        }
+    }
+
+    return groups;
+}
+
 function BookingCard({ booking }: { booking: Booking }) {
     const slot = booking.court_slots;
     const court = slot?.courts;
+    const effectiveStatus = getEffectiveBookingStatus(booking);
 
     if (!slot || !court) {
         return (
@@ -145,10 +222,10 @@ function BookingCard({ booking }: { booking: Booking }) {
 
                 <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                        booking.status,
+                        effectiveStatus,
                     )}`}
                 >
-                    {booking.status}
+                    {effectiveStatus}
                 </span>
             </div>
 
@@ -182,7 +259,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                         Cancel booking
                     </SubmitButton>
                 </form>
-                
+
             ) : isWithinCancellationCutoff(booking) ? (
                 <p className="mt-5 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
                     This booking can no longer be cancelled because it starts within 6 hours.
@@ -234,6 +311,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
 
     const upcomingBookings = bookings.filter((booking) => {
         const startTime = booking.court_slots?.start_time;
+        const effectiveStatus = getEffectiveBookingStatus(booking);
 
         if (!startTime) {
             return false;
@@ -241,13 +319,14 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
 
         return (
             new Date(startTime) >= now &&
-            booking.status !== "cancelled" &&
-            booking.status !== "completed"
+            effectiveStatus !== "cancelled" &&
+            effectiveStatus !== "completed"
         );
     });
 
     const pastBookings = bookings.filter((booking) => {
         const startTime = booking.court_slots?.start_time;
+        const effectiveStatus = getEffectiveBookingStatus(booking);
 
         if (!startTime) {
             return true;
@@ -255,10 +334,13 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
 
         return (
             new Date(startTime) < now ||
-            booking.status === "cancelled" ||
-            booking.status === "completed"
+            effectiveStatus === "cancelled" ||
+            effectiveStatus === "completed"
         );
     });
+
+    const upcomingBookingGroups = groupBookingsByDate(upcomingBookings);
+    const pastBookingGroups = groupBookingsByDate(pastBookings);
 
     if (error) {
         return (
@@ -323,9 +405,25 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         You do not have any upcoming bookings.
                     </div>
                 ) : (
-                    <div className="mt-6 grid gap-4">
-                        {upcomingBookings.map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} />
+                    <div className="mt-6 grid gap-6">
+                        {upcomingBookingGroups.map((group) => (
+                            <section key={group.dateKey}>
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                                    <h3 className="text-lg font-semibold text-slate-950">
+                                        {group.dateLabel}
+                                    </h3>
+                                    <p className="text-sm text-slate-500">
+                                        {group.bookings.length}{" "}
+                                        {group.bookings.length === 1 ? "booking" : "bookings"}
+                                    </p>
+                                </div>
+
+                                <div className="mt-3 grid gap-4">
+                                    {group.bookings.map((booking) => (
+                                        <BookingCard key={booking.id} booking={booking} />
+                                    ))}
+                                </div>
+                            </section>
                         ))}
                     </div>
                 )}
@@ -341,9 +439,25 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         Your past bookings will appear here.
                     </div>
                 ) : (
-                    <div className="mt-6 grid gap-4">
-                        {pastBookings.map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} />
+                    <div className="mt-6 grid gap-6">
+                        {pastBookingGroups.map((group) => (
+                            <section key={group.dateKey}>
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                                    <h3 className="text-lg font-semibold text-slate-950">
+                                        {group.dateLabel}
+                                    </h3>
+                                    <p className="text-sm text-slate-500">
+                                        {group.bookings.length}{" "}
+                                        {group.bookings.length === 1 ? "booking" : "bookings"}
+                                    </p>
+                                </div>
+
+                                <div className="mt-3 grid gap-4">
+                                    {group.bookings.map((booking) => (
+                                        <BookingCard key={booking.id} booking={booking} />
+                                    ))}
+                                </div>
+                            </section>
                         ))}
                     </div>
                 )}
