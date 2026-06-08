@@ -271,7 +271,7 @@ export default async function AdminSlotsPage({
                         : "bg-slate-200 text-slate-600"
                     }`}
                   >
-                    {slot.is_available ? "Available" : "Unavailable / booked"}
+                    {slot.is_available ? "Available" : "Unavailable / Booked"}
                   </span>
                 </div>
               </article>
