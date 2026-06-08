@@ -87,3 +87,112 @@ export async function createCourtSlot(formData: FormData) {
 
     redirect(buildAdminSlotsRedirectPath("message", "Court slot created."));
 }
+
+function buildAdminCourtsRedirectPath(type: "message" | "error", text: string) {
+    const params = new URLSearchParams();
+  
+    params.set(type, text);
+  
+    return `/admin/courts?${params.toString()}`;
+  }
+  
+  function getCreateCourtErrorMessage(error: {
+    code?: string;
+    message?: string;
+  }) {
+    if (
+      error.code === "23505" ||
+      error.message?.includes("unique_courts_name")
+    ) {
+      return "A court with this name already exists.";
+    }
+  
+    return error.message ?? "Could not create court.";
+  }
+  
+  export async function createCourt(formData: FormData) {
+    await requireAdmin();
+  
+    const name = String(formData.get("name") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const locationLabel = String(formData.get("locationLabel") ?? "").trim();
+    const isIndoor = String(formData.get("isIndoor") ?? "true") === "true";
+    const pricePerHour = Number(formData.get("pricePerHour") ?? 0);
+  
+    if (!name) {
+      redirect(buildAdminCourtsRedirectPath("error", "Please enter a court name."));
+    }
+  
+    if (!Number.isFinite(pricePerHour) || pricePerHour < 0) {
+      redirect(
+        buildAdminCourtsRedirectPath("error", "Please enter a valid price."),
+      );
+    }
+  
+    const pricePerHourCents = Math.round(pricePerHour * 100);
+  
+    const supabase = await createSupabaseServerClient();
+  
+    const { error } = await supabase.from("courts").insert({
+      name,
+      description: description || null,
+      location_label: locationLabel || null,
+      is_indoor: isIndoor,
+      price_per_hour_cents: pricePerHourCents,
+      is_active: true,
+    });
+  
+    if (error) {
+      redirect(
+        buildAdminCourtsRedirectPath("error", getCreateCourtErrorMessage(error)),
+      );
+    }
+  
+    revalidatePath("/admin/courts");
+    revalidatePath("/admin");
+    revalidatePath("/courts");
+    revalidatePath("/bookings/new");
+  
+    redirect(buildAdminCourtsRedirectPath("message", "Court created."));
+  }
+  
+  export async function toggleCourtActive(formData: FormData) {
+    await requireAdmin();
+  
+    const courtId = String(formData.get("courtId") ?? "");
+    const nextIsActive = String(formData.get("nextIsActive") ?? "") === "true";
+  
+    if (!courtId) {
+      redirect(buildAdminCourtsRedirectPath("error", "Missing selected court."));
+    }
+  
+    const supabase = await createSupabaseServerClient();
+  
+    const { error } = await supabase
+      .from("courts")
+      .update({
+        is_active: nextIsActive,
+      })
+      .eq("id", courtId);
+  
+    if (error) {
+      redirect(
+        buildAdminCourtsRedirectPath(
+          "error",
+          error.message ?? "Could not update court.",
+        ),
+      );
+    }
+  
+    revalidatePath("/admin/courts");
+    revalidatePath("/admin");
+    revalidatePath("/courts");
+    revalidatePath("/bookings/new");
+  
+    redirect(
+      buildAdminCourtsRedirectPath(
+        "message",
+        nextIsActive ? "Court activated." : "Court deactivated.",
+      ),
+    );
+  }
