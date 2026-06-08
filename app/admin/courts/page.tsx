@@ -221,11 +221,10 @@ export default async function AdminCourtsPage({
                       </h3>
 
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          court.is_active
-                            ? "bg-green-50 text-green-700"
-                            : "bg-slate-200 text-slate-600"
-                        }`}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${court.is_active
+                          ? "bg-green-50 text-green-700"
+                          : "bg-slate-200 text-slate-600"
+                          }`}
                       >
                         {court.is_active ? "Active" : "Inactive"}
                       </span>
@@ -257,21 +256,29 @@ export default async function AdminCourtsPage({
                     </div>
                   </div>
 
-                  <form action={toggleCourtActive}>
-                    <input type="hidden" name="courtId" value={court.id} />
-                    <input
-                      type="hidden"
-                      name="nextIsActive"
-                      value={court.is_active ? "false" : "true"}
-                    />
-
-                    <SubmitButton
-                      pendingText={court.is_active ? "Deactivating..." : "Activating..."}
-                      variant={court.is_active ? "danger" : "secondary"}
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <Link
+                      href={`/admin/courts/${court.id}/edit`}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
                     >
-                      {court.is_active ? "Deactivate" : "Activate"}
-                    </SubmitButton>
-                  </form>
+                      Edit
+                    </Link>
+
+                    <form action={toggleCourtActive}>
+                      <input type="hidden" name="courtId" value={court.id} />
+                      <input
+                        type="hidden"
+                        name="nextIsActive"
+                        value={court.is_active ? "false" : "true"}
+                      />
+                      <SubmitButton
+                        pendingText={court.is_active ? "Deactivating..." : "Activating..."}
+                        variant={court.is_active ? "danger" : "secondary"}
+                      >
+                        {court.is_active ? "Deactivate" : "Activate"}
+                      </SubmitButton>
+                    </form>
+                  </div>
                 </div>
               </article>
             ))}

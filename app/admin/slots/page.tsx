@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createCourtSlot } from "@/app/admin/actions";
+import { createCourtSlot, toggleCourtSlotAvailability } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -23,6 +23,10 @@ type CourtSlot = {
   end_time: string;
   is_available: boolean;
   courts: Court | null;
+  bookings: Array<{
+    id: string;
+    status: "pending" | "confirmed" | "cancelled" | "completed";
+  }> | null;
 };
 
 function getTodayInMalaysia() {
@@ -59,6 +63,36 @@ function formatSlotTime(dateTime: string) {
   }).format(new Date(dateTime));
 }
 
+function hasActiveBooking(slot: CourtSlot) {
+  return (
+    slot.bookings?.some(
+      (booking) =>
+        booking.status === "pending" || booking.status === "confirmed",
+    ) ?? false
+  );
+}
+
+function getSlotStatus(slot: CourtSlot) {
+  if (hasActiveBooking(slot)) {
+    return {
+      label: "Booked",
+      className: "bg-yellow-50 text-yellow-700",
+    };
+  }
+
+  if (slot.is_available) {
+    return {
+      label: "Available",
+      className: "bg-green-50 text-green-700",
+    };
+  }
+
+  return {
+    label: "Blocked",
+    className: "bg-slate-200 text-slate-600",
+  };
+}
+
 export default async function AdminSlotsPage({
   searchParams,
 }: AdminSlotsPageProps) {
@@ -84,6 +118,10 @@ export default async function AdminSlotsPage({
           id,
           name,
           location_label
+        ),
+        bookings (
+          id,
+          status
         )
       `,
     )
@@ -242,40 +280,65 @@ export default async function AdminSlotsPage({
           </p>
         ) : (
           <div className="mt-6 grid gap-3">
-            {upcomingSlots.map((slot) => (
-              <article
-                key={slot.id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">
-                      {slot.courts?.name ?? "Unknown court"}
-                    </p>
+            {upcomingSlots.map((slot) => {
+              const slotStatus = getSlotStatus(slot);
+              const activeBooking = hasActiveBooking(slot);
 
-                    <p className="mt-1 text-sm text-slate-600">
-                      {formatSlotDate(slot.start_time)} ·{" "}
-                      {formatSlotTime(slot.start_time)} -{" "}
-                      {formatSlotTime(slot.end_time)}
-                    </p>
+              return (
+                <article
+                  key={slot.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">
+                        {slot.courts?.name ?? "Unknown court"}
+                      </p>
 
-                    <p className="mt-1 text-xs text-slate-500">
-                      {slot.courts?.location_label ?? "Picko"}
-                    </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {formatSlotDate(slot.start_time)} ·{" "}
+                        {formatSlotTime(slot.start_time)} -{" "}
+                        {formatSlotTime(slot.end_time)}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {slot.courts?.location_label ?? "Picko"}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${slotStatus.className}`}
+                      >
+                        {slotStatus.label}
+                      </span>
+
+                      {activeBooking ? (
+                        <p className="max-w-xs text-left text-xs text-slate-500 sm:text-right">
+                          This slot has an active booking and cannot be changed here.
+                        </p>
+                      ) : (
+                        <form action={toggleCourtSlotAvailability}>
+                          <input type="hidden" name="slotId" value={slot.id} />
+                          <input
+                            type="hidden"
+                            name="nextIsAvailable"
+                            value={slot.is_available ? "false" : "true"}
+                          />
+
+                          <SubmitButton
+                            pendingText={slot.is_available ? "Deactivating..." : "Reactivating..."}
+                            variant={slot.is_available ? "danger" : "secondary"}
+                          >
+                            {slot.is_available ? "Deactivate" : "Reactivate"}
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </div>
                   </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      slot.is_available
-                        ? "bg-green-50 text-green-700"
-                        : "bg-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {slot.is_available ? "Available" : "Unavailable / Booked"}
-                  </span>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
