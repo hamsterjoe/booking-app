@@ -28,6 +28,12 @@ type Booking = {
     } | null;
 };
 
+type BookingGroup = {
+    dateKey: string;
+    dateLabel: string;
+    bookings: Booking[];
+};
+
 const statusOptions = ["all", "pending", "confirmed", "cancelled", "completed"];
 
 function isValidStatus(status: string | undefined) {
@@ -43,11 +49,63 @@ function formatPrice(cents: number) {
 
 function sortBookingsBySlotTime(bookings: Booking[]) {
     return [...bookings].sort((a, b) => {
-        const aTime = a.court_slots?.start_time ?? "";
-        const bTime = b.court_slots?.start_time ?? "";
+        const aTime = a.court_slots?.start_time;
+        const bTime = b.court_slots?.start_time;
+
+        if (!aTime && !bTime) {
+            return b.created_at.localeCompare(a.created_at);
+        }
+
+        if (!aTime) {
+            return 1;
+        }
+
+        if (!bTime) {
+            return -1;
+        }
 
         return aTime.localeCompare(bTime);
     });
+}
+
+function getBookingDateKey(booking: Booking) {
+    const startTime = booking.court_slots?.start_time;
+
+    if (!startTime) {
+        return "unknown";
+    }
+
+    return new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: "Asia/Kuala_Lumpur",
+    }).format(new Date(startTime));
+}
+
+function groupBookingsByDate(bookings: Booking[]) {
+    const groups: BookingGroup[] = [];
+
+    for (const booking of bookings) {
+        const dateKey = getBookingDateKey(booking);
+        const dateLabel = booking.court_slots
+            ? formatDate(booking.court_slots.start_time)
+            : "Unknown date";
+
+        const existingGroup = groups.find((group) => group.dateKey === dateKey);
+
+        if (existingGroup) {
+            existingGroup.bookings.push(booking);
+        } else {
+            groups.push({
+                dateKey,
+                dateLabel,
+                bookings: [booking],
+            });
+        }
+    }
+
+    return groups;
 }
 
 function formatDate(dateTime: string) {
@@ -85,6 +143,22 @@ function getStatusClasses(status: BookingStatus) {
     return "bg-slate-100 text-slate-700";
 }
 
+function getEffectiveBookingStatus(booking: Booking): BookingStatus {
+    if (booking.status !== "confirmed") {
+        return booking.status;
+    }
+
+    const endTime = booking.court_slots?.end_time;
+
+    if (!endTime) {
+        return booking.status;
+    }
+
+    const hasEnded = new Date(endTime).getTime() < Date.now();
+
+    return hasEnded ? "completed" : booking.status;
+}
+
 export default async function AdminBookingsPage({
     searchParams,
 }: AdminBookingsPageProps) {
@@ -95,7 +169,7 @@ export default async function AdminBookingsPage({
 
     const supabase = await createSupabaseServerClient();
 
-    let query = supabase
+    const { data, error } = await supabase
         .from("bookings")
         .select(
             `
@@ -118,13 +192,17 @@ export default async function AdminBookingsPage({
         )
         .order("created_at", { ascending: false });
 
-    if (selectedStatus !== "all") {
-        query = query.eq("status", selectedStatus);
-    }
+    const allBookings = (data ?? []) as unknown as Booking[];
 
-    const { data, error } = await query;
+    const filteredBookings =
+        selectedStatus === "all"
+            ? allBookings
+            : allBookings.filter(
+                (booking) => getEffectiveBookingStatus(booking) === selectedStatus,
+            );
 
-    const bookings = sortBookingsBySlotTime((data ?? []) as unknown as Booking[]);
+    const bookings = sortBookingsBySlotTime(filteredBookings);
+    const bookingGroups = groupBookingsByDate(bookings);
 
     return (
         <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12">
@@ -191,66 +269,84 @@ export default async function AdminBookingsPage({
                     No bookings found for this filter.
                 </div>
             ) : (
-                <div className="grid gap-4">
-                    {bookings.map((booking) => {
-                        const slot = booking.court_slots;
-                        const court = slot?.courts;
+                <div className="grid gap-6">
+                    {bookingGroups.map((group) => (
+                        <section key={group.dateKey}>
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                                <h2 className="text-lg font-semibold text-slate-950">
+                                    {group.dateLabel}
+                                </h2>
+                                <p className="text-sm text-slate-500">
+                                    {group.bookings.length}{" "}
+                                    {group.bookings.length === 1 ? "booking" : "bookings"}
+                                </p>
+                            </div>
 
-                        return (
-                            <article
-                                key={booking.id}
-                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                            >
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                                            {slot ? formatDate(slot.start_time) : "Unknown date"}
-                                        </p>
+                            <div className="mt-3 grid gap-4">
+                                {group.bookings.map((booking) => {
+                                    const slot = booking.court_slots;
+                                    const court = slot?.courts;
+                                    const effectiveStatus = getEffectiveBookingStatus(booking);
 
-                                        <h2 className="mt-2 text-xl font-semibold text-slate-950">
-                                            {court?.name ?? "Unknown court"}
-                                        </h2>
+                                    return (
+                                        <article
+                                            key={booking.id}
+                                            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                                        >
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                <div>
+                                                    <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                                                        {slot ? formatDate(slot.start_time) : "Unknown date"}
+                                                    </p>
 
-                                        {slot ? (
-                                            <p className="mt-2 text-sm text-slate-600">
-                                                {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                                            </p>
-                                        ) : null}
-                                    </div>
+                                                    <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                                                        {court?.name ?? "Unknown court"}
+                                                    </h3>
 
-                                    <span
-                                        className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                            booking.status,
-                                        )}`}
-                                    >
-                                        {booking.status}
-                                    </span>
-                                </div>
+                                                    {slot ? (
+                                                        <p className="mt-2 text-sm text-slate-600">
+                                                            {formatTime(slot.start_time)} -{" "}
+                                                            {formatTime(slot.end_time)}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
 
-                                <div className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-                                    <div>
-                                        <p className="font-medium text-slate-900">User ID</p>
-                                        <p className="break-all">{booking.user_id}</p>
-                                    </div>
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
+                                                        effectiveStatus,
+                                                    )}`}
+                                                >
+                                                    {effectiveStatus}
+                                                </span>
+                                            </div>
 
-                                    <div>
-                                        <p className="font-medium text-slate-900">Location</p>
-                                        <p>{court?.location_label ?? "Picko"}</p>
-                                    </div>
+                                            <div className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+                                                <div>
+                                                    <p className="font-medium text-slate-900">User ID</p>
+                                                    <p className="break-all">{booking.user_id}</p>
+                                                </div>
 
-                                    <div>
-                                        <p className="font-medium text-slate-900">Price</p>
-                                        <p>{formatPrice(booking.total_price_cents)}</p>
-                                    </div>
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Location</p>
+                                                    <p>{court?.location_label ?? "Picko"}</p>
+                                                </div>
 
-                                    <div>
-                                        <p className="font-medium text-slate-900">Created</p>
-                                        <p>{formatDate(booking.created_at)}</p>
-                                    </div>
-                                </div>
-                            </article>
-                        );
-                    })}
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Price</p>
+                                                    <p>{formatPrice(booking.total_price_cents)}</p>
+                                                </div>
+
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Created</p>
+                                                    <p>{formatDate(booking.created_at)}</p>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    ))}
                 </div>
             )}
         </section>
