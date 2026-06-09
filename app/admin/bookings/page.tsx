@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+
 type AdminBookingsPageProps = {
     searchParams: Promise<{
         status?: string;
@@ -26,6 +27,12 @@ type Booking = {
             location_label: string | null;
         } | null;
     } | null;
+};
+
+type Profile = {
+    id: string;
+    full_name: string | null;
+    phone_number: string | null;
 };
 
 type BookingGroup = {
@@ -194,6 +201,24 @@ export default async function AdminBookingsPage({
 
     const allBookings = (data ?? []) as unknown as Booking[];
 
+    const userIds = Array.from(
+        new Set(allBookings.map((booking) => booking.user_id)),
+    );
+
+    const { data: profilesData, error: profilesError } =
+        userIds.length > 0
+            ? await supabase
+                .from("profiles")
+                .select("id, full_name, phone_number")
+                .in("id", userIds)
+            : { data: [], error: null };
+
+    const profiles = (profilesData ?? []) as Profile[];
+
+    const profilesByUserId = new Map(
+        profiles.map((profile) => [profile.id, profile]),
+    );
+
     const filteredBookings =
         selectedStatus === "all"
             ? allBookings
@@ -259,10 +284,12 @@ export default async function AdminBookingsPage({
                 </div>
             </form>
 
-            {error ? (
+            {error || profilesError ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
                     <h2 className="font-semibold">Could not load bookings</h2>
-                    <p className="mt-2 text-sm">{error.message}</p>
+                    <p className="mt-2 text-sm">
+                        {error?.message ?? profilesError?.message}
+                    </p>
                 </div>
             ) : bookings.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
@@ -287,6 +314,7 @@ export default async function AdminBookingsPage({
                                     const slot = booking.court_slots;
                                     const court = slot?.courts;
                                     const effectiveStatus = getEffectiveBookingStatus(booking);
+                                    const profile = profilesByUserId.get(booking.user_id);
 
                                     return (
                                         <article
@@ -320,10 +348,18 @@ export default async function AdminBookingsPage({
                                                 </span>
                                             </div>
 
-                                            <div className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+                                            <div className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-5">
                                                 <div>
-                                                    <p className="font-medium text-slate-900">User ID</p>
-                                                    <p className="break-all">{booking.user_id}</p>
+                                                    <p className="font-medium text-slate-900">Customer</p>
+                                                    <p>{profile?.full_name ?? "No name provided"}</p>
+                                                    <p className="mt-1 text-xs break-all text-slate-500">
+                                                        {booking.user_id}
+                                                    </p>
+                                                </div>
+
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Phone</p>
+                                                    <p>{profile?.phone_number ?? "No phone provided"}</p>
                                                 </div>
 
                                                 <div>
