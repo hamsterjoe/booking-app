@@ -176,7 +176,50 @@ export async function createBulkCourtSlots(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
 
-  const { error } = await supabase.from("court_slots").insert(slotsToInsert);
+  const { data: existingSlots, error: existingSlotsError } = await supabase
+    .from("court_slots")
+    .select("start_time, end_time")
+    .eq("court_id", courtId)
+    .gte("start_time", rangeStart.toISOString())
+    .lt("start_time", rangeEnd.toISOString());
+
+  if (existingSlotsError) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        existingSlotsError.message ?? "Could not check existing slots.",
+      ),
+    );
+  }
+
+  const existingSlotKeys = new Set(
+    (existingSlots ?? []).map((slot) => {
+      const startMs = new Date(slot.start_time).getTime();
+      const endMs = new Date(slot.end_time).getTime();
+
+      return `${startMs}-${endMs}`;
+    }),
+  );
+
+  const newSlotsToInsert = slotsToInsert.filter((slot) => {
+    const startMs = new Date(slot.start_time).getTime();
+    const endMs = new Date(slot.end_time).getTime();
+
+    return !existingSlotKeys.has(`${startMs}-${endMs}`);
+  });
+
+  const skippedCount = slotsToInsert.length - newSlotsToInsert.length;
+
+  if (newSlotsToInsert.length === 0) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "message",
+        "No new slots created. All slots in this range already exist.",
+      ),
+    );
+  }
+
+  const { error } = await supabase.from("court_slots").insert(newSlotsToInsert);
 
   if (error) {
     redirect(
@@ -191,10 +234,18 @@ export async function createBulkCourtSlots(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/bookings/new");
 
+  const createdText = `${newSlotsToInsert.length} slot${newSlotsToInsert.length === 1 ? "" : "s"
+    } created`;
+
+  const skippedText =
+    skippedCount > 0
+      ? ` ${skippedCount} duplicate slot${skippedCount === 1 ? "" : "s"} skipped.`
+      : ".";
+
   redirect(
     buildAdminSlotsRedirectPath(
       "message",
-      `${slotsToInsert.length} slot${slotsToInsert.length === 1 ? "" : "s"} created.`,
+      `${createdText}.${skippedText}`,
     ),
   );
 }
