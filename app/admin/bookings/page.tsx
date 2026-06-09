@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type AdminBookingsPageProps = {
     searchParams: Promise<{
+        date?: string;
+        courtId?: string;
         status?: string;
     }>;
 };
@@ -35,6 +37,12 @@ type Profile = {
     phone_number: string | null;
 };
 
+type CourtOption = {
+    id: string;
+    name: string;
+    location_label: string | null;
+};
+
 type BookingGroup = {
     dateKey: string;
     dateLabel: string;
@@ -45,6 +53,14 @@ const statusOptions = ["all", "pending", "confirmed", "cancelled", "completed"];
 
 function isValidStatus(status: string | undefined) {
     return statusOptions.includes(status ?? "all");
+}
+
+function isValidDateInput(value: string | undefined) {
+    if (!value) {
+        return false;
+    }
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function formatPrice(cents: number) {
@@ -172,6 +188,9 @@ export default async function AdminBookingsPage({
     await requireAdmin();
 
     const params = await searchParams;
+
+    const selectedDate = isValidDateInput(params.date) ? params.date! : "";
+    const selectedCourtId = params.courtId ?? "all";
     const selectedStatus = isValidStatus(params.status) ? params.status ?? "all" : "all";
 
     const supabase = await createSupabaseServerClient();
@@ -199,7 +218,13 @@ export default async function AdminBookingsPage({
         )
         .order("created_at", { ascending: false });
 
+    const { data: courtsData, error: courtsError } = await supabase
+        .from("courts")
+        .select("id, name, location_label")
+        .order("name", { ascending: true });
+
     const allBookings = (data ?? []) as unknown as Booking[];
+    const courtOptions = (courtsData ?? []) as CourtOption[];
 
     const userIds = Array.from(
         new Set(allBookings.map((booking) => booking.user_id)),
@@ -219,12 +244,22 @@ export default async function AdminBookingsPage({
         profiles.map((profile) => [profile.id, profile]),
     );
 
-    const filteredBookings =
-        selectedStatus === "all"
-            ? allBookings
-            : allBookings.filter(
-                (booking) => getEffectiveBookingStatus(booking) === selectedStatus,
-            );
+    const filteredBookings = allBookings.filter((booking) => {
+        const effectiveStatus = getEffectiveBookingStatus(booking);
+        const bookingDateKey = getBookingDateKey(booking);
+        const bookingCourtId = booking.court_slots?.courts?.id;
+
+        const matchesStatus =
+            selectedStatus === "all" || effectiveStatus === selectedStatus;
+
+        const matchesDate =
+            !selectedDate || bookingDateKey === selectedDate;
+
+        const matchesCourt =
+            selectedCourtId === "all" || bookingCourtId === selectedCourtId;
+
+        return matchesStatus && matchesDate && matchesCourt;
+    });
 
     const bookings = sortBookingsBySlotTime(filteredBookings);
     const bookingGroups = groupBookingsByDate(bookings);
@@ -257,43 +292,97 @@ export default async function AdminBookingsPage({
                 method="get"
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
             >
-                <label htmlFor="status" className="text-sm font-medium text-slate-700">
-                    Filter by status
-                </label>
+                <h2 className="text-lg font-semibold text-slate-950">Filter bookings</h2>
 
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                    <select
-                        id="status"
-                        name="status"
-                        defaultValue={selectedStatus}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 sm:max-w-xs"
-                    >
-                        <option value="all">All bookings</option>
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="completed">Completed</option>
-                    </select>
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label
+                            htmlFor="date"
+                            className="text-sm font-medium text-slate-700"
+                        >
+                            Date
+                        </label>
+                        <input
+                            id="date"
+                            name="date"
+                            type="date"
+                            defaultValue={selectedDate}
+                            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        />
+                    </div>
 
+                    <div>
+                        <label
+                            htmlFor="courtId"
+                            className="text-sm font-medium text-slate-700"
+                        >
+                            Court
+                        </label>
+                        <select
+                            id="courtId"
+                            name="courtId"
+                            defaultValue={selectedCourtId}
+                            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        >
+                            <option value="all">All courts</option>
+                            {courtOptions.map((court) => (
+                                <option key={court.id} value={court.id}>
+                                    {court.name}
+                                    {court.location_label ? ` — ${court.location_label}` : ""}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="status"
+                            className="text-sm font-medium text-slate-700"
+                        >
+                            Status
+                        </label>
+                        <select
+                            id="status"
+                            name="status"
+                            defaultValue={selectedStatus}
+                            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        >
+                            <option value="all">All statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <button
                         type="submit"
                         className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                     >
-                        Apply filter
+                        Apply filters
                     </button>
+
+                    <Link
+                        href="/admin/bookings"
+                        className="rounded-lg border border-slate-300 px-5 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                        Reset filters
+                    </Link>
                 </div>
             </form>
 
-            {error || profilesError ? (
+            {error || profilesError || courtsError ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
                     <h2 className="font-semibold">Could not load bookings</h2>
                     <p className="mt-2 text-sm">
-                        {error?.message ?? profilesError?.message}
+                        {error?.message ?? profilesError?.message ?? courtsError?.message}
                     </p>
                 </div>
             ) : bookings.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                    No bookings found for this filter.
+                    No bookings match these filters.
                 </div>
             ) : (
                 <div className="grid gap-6">
