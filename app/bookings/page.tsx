@@ -34,12 +34,28 @@ type BookingGroup = {
     bookings: Booking[];
 };
 
+type BookingFilter = "all" | "upcoming" | "completed" | "cancelled";
+
 type BookingsPageProps = {
     searchParams: Promise<{
         message?: string;
         error?: string;
+        filter?: string;
     }>;
 };
+
+const bookingFilters: BookingFilter[] = [
+    "all",
+    "upcoming",
+    "completed",
+    "cancelled",
+];
+
+function isValidBookingFilter(
+    filter: string | undefined,
+): filter is BookingFilter {
+    return bookingFilters.includes((filter ?? "all") as BookingFilter);
+}
 
 function formatPrice(cents: number) {
     return new Intl.NumberFormat("en-MY", {
@@ -270,8 +286,51 @@ function BookingCard({ booking }: { booking: Booking }) {
     );
 }
 
+function BookingGroupList({
+    groups,
+    emptyText,
+}: {
+    groups: BookingGroup[];
+    emptyText: string;
+}) {
+    if (groups.length === 0) {
+        return (
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+                {emptyText}
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-6 grid gap-6">
+            {groups.map((group) => (
+                <section key={group.dateKey}>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <h3 className="text-lg font-semibold text-slate-950">
+                            {group.dateLabel}
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                            {group.bookings.length}{" "}
+                            {group.bookings.length === 1 ? "booking" : "bookings"}
+                        </p>
+                    </div>
+
+                    <div className="mt-3 grid gap-4">
+                        {group.bookings.map((booking) => (
+                            <BookingCard key={booking.id} booking={booking} />
+                        ))}
+                    </div>
+                </section>
+            ))}
+        </div>
+    );
+}
+
 export default async function BookingsPage({ searchParams }: BookingsPageProps) {
     const params = await searchParams;
+    const selectedFilter = isValidBookingFilter(params.filter)
+        ? params.filter ?? "all"
+        : "all";
 
     const supabase = await createSupabaseServerClient();
 
@@ -339,8 +398,18 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
         );
     });
 
+    const completedBookings = bookings.filter(
+        (booking) => getEffectiveBookingStatus(booking) === "completed",
+    );
+
+    const cancelledBookings = bookings.filter(
+        (booking) => getEffectiveBookingStatus(booking) === "cancelled",
+    );
+
     const upcomingBookingGroups = groupBookingsByDate(upcomingBookings);
     const pastBookingGroups = groupBookingsByDate(pastBookings);
+    const completedBookingGroups = groupBookingsByDate(completedBookings);
+    const cancelledBookingGroups = groupBookingsByDate(cancelledBookings);
 
     if (error) {
         return (
@@ -395,73 +464,100 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                 </Link>
             </div>
 
-            <div>
-                <h2 className="text-2xl font-bold text-slate-950">
-                    Upcoming bookings
-                </h2>
+            <form
+                action="/bookings"
+                method="get"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+                <label
+                    htmlFor="filter"
+                    className="text-sm font-medium text-slate-700"
+                >
+                    Filter bookings
+                </label>
 
-                {upcomingBookings.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                        You do not have any upcoming bookings.
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                    <select
+                        id="filter"
+                        name="filter"
+                        defaultValue={selectedFilter}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 sm:max-w-xs"
+                    >
+                        <option value="all">All bookings</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+
+                    <button
+                        type="submit"
+                        className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                        Apply filter
+                    </button>
+
+                    <Link
+                        href="/bookings"
+                        className="rounded-lg border border-slate-300 px-5 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                        Reset
+                    </Link>
+                </div>
+            </form>
+
+            {selectedFilter === "all" ? (
+                <>
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-950">
+                            Upcoming bookings
+                        </h2>
+                        <BookingGroupList
+                            groups={upcomingBookingGroups}
+                            emptyText="You do not have any upcoming bookings."
+                        />
                     </div>
-                ) : (
-                    <div className="mt-6 grid gap-6">
-                        {upcomingBookingGroups.map((group) => (
-                            <section key={group.dateKey}>
-                                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                                    <h3 className="text-lg font-semibold text-slate-950">
-                                        {group.dateLabel}
-                                    </h3>
-                                    <p className="text-sm text-slate-500">
-                                        {group.bookings.length}{" "}
-                                        {group.bookings.length === 1 ? "booking" : "bookings"}
-                                    </p>
-                                </div>
 
-                                <div className="mt-3 grid gap-4">
-                                    {group.bookings.map((booking) => (
-                                        <BookingCard key={booking.id} booking={booking} />
-                                    ))}
-                                </div>
-                            </section>
-                        ))}
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-950">
+                            Booking history
+                        </h2>
+                        <BookingGroupList
+                            groups={pastBookingGroups}
+                            emptyText="Your past bookings will appear here."
+                        />
                     </div>
-                )}
-            </div>
-
-            <div>
-                <h2 className="text-2xl font-bold text-slate-950">
-                    Booking history
-                </h2>
-
-                {pastBookings.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                        Your past bookings will appear here.
-                    </div>
-                ) : (
-                    <div className="mt-6 grid gap-6">
-                        {pastBookingGroups.map((group) => (
-                            <section key={group.dateKey}>
-                                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                                    <h3 className="text-lg font-semibold text-slate-950">
-                                        {group.dateLabel}
-                                    </h3>
-                                    <p className="text-sm text-slate-500">
-                                        {group.bookings.length}{" "}
-                                        {group.bookings.length === 1 ? "booking" : "bookings"}
-                                    </p>
-                                </div>
-
-                                <div className="mt-3 grid gap-4">
-                                    {group.bookings.map((booking) => (
-                                        <BookingCard key={booking.id} booking={booking} />
-                                    ))}
-                                </div>
-                            </section>
-                        ))}
-                    </div>
-                )}
-            </div>
+                </>
+            ) : selectedFilter === "upcoming" ? (
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-950">
+                        Upcoming bookings
+                    </h2>
+                    <BookingGroupList
+                        groups={upcomingBookingGroups}
+                        emptyText="You do not have any upcoming bookings."
+                    />
+                </div>
+            ) : selectedFilter === "completed" ? (
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-950">
+                        Completed bookings
+                    </h2>
+                    <BookingGroupList
+                        groups={completedBookingGroups}
+                        emptyText="You do not have any completed bookings."
+                    />
+                </div>
+            ) : (
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-950">
+                        Cancelled bookings
+                    </h2>
+                    <BookingGroupList
+                        groups={cancelledBookingGroups}
+                        emptyText="You do not have any cancelled bookings."
+                    />
+                </div>
+            )}
         </section>
     );
 }
