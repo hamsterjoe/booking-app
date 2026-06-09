@@ -8,6 +8,9 @@ type AdminSlotsPageProps = {
   searchParams: Promise<{
     message?: string;
     error?: string;
+    date?: string;
+    courtId?: string;
+    status?: string;
   }>;
 };
 
@@ -29,6 +32,15 @@ type CourtSlot = {
   }> | null;
 };
 
+type SlotStatusFilter = "all" | "available" | "booked" | "blocked";
+
+const slotStatusFilters: SlotStatusFilter[] = [
+  "all",
+  "available",
+  "booked",
+  "blocked",
+];
+
 function getTodayInMalaysia() {
   const parts = new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
@@ -42,6 +54,32 @@ function getTodayInMalaysia() {
   const day = parts.find((part) => part.type === "day")?.value;
 
   return `${year}-${month}-${day}`;
+}
+
+function isValidDateInput(value: string | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function getMalaysiaDateRange(date: string) {
+  const start = new Date(`${date}T00:00:00+08:00`);
+  const end = new Date(start);
+
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  return {
+    startIso: start.toISOString(),
+    endIso: end.toISOString(),
+  };
+}
+
+function isValidSlotStatusFilter(
+  status: string | undefined,
+): status is SlotStatusFilter {
+  return slotStatusFilters.includes((status ?? "all") as SlotStatusFilter);
 }
 
 function formatSlotDate(dateTime: string) {
@@ -93,12 +131,33 @@ function getSlotStatus(slot: CourtSlot) {
   };
 }
 
+function getSlotFilterStatus(slot: CourtSlot): Exclude<SlotStatusFilter, "all"> {
+  if (hasActiveBooking(slot)) {
+    return "booked";
+  }
+
+  if (slot.is_available) {
+    return "available";
+  }
+
+  return "blocked";
+}
+
 export default async function AdminSlotsPage({
   searchParams,
 }: AdminSlotsPageProps) {
   await requireAdmin();
 
   const params = await searchParams;
+  const selectedDate = isValidDateInput(params.date)
+    ? params.date!
+    : getTodayInMalaysia();
+  const selectedCourtId = params.courtId ?? "all";
+  const selectedStatus = isValidSlotStatusFilter(params.status)
+    ? params.status ?? "all"
+    : "all";
+  const { startIso, endIso } = getMalaysiaDateRange(selectedDate);
+
   const supabase = await createSupabaseServerClient();
 
   const { data: courts, error: courtsError } = await supabase
@@ -106,31 +165,44 @@ export default async function AdminSlotsPage({
     .select("id, name, location_label")
     .order("name", { ascending: true });
 
-  const { data: slots, error: slotsError } = await supabase
+  let slotsQuery = supabase
     .from("court_slots")
     .select(
       `
-        id,
-        start_time,
-        end_time,
-        is_available,
-        courts (
           id,
-          name,
-          location_label
-        ),
-        bookings (
-          id,
-          status
-        )
-      `,
+          start_time,
+          end_time,
+          is_available,
+          courts (
+            id,
+            name,
+            location_label
+          ),
+          bookings (
+            id,
+            status
+          )
+        `,
     )
-    .gte("start_time", new Date().toISOString())
-    .order("start_time", { ascending: true })
-    .limit(20);
+    .gte("start_time", startIso)
+    .lt("start_time", endIso)
+    .order("start_time", { ascending: true });
+
+  if (selectedCourtId !== "all") {
+    slotsQuery = slotsQuery.eq("court_id", selectedCourtId);
+  }
+
+  const { data: slots, error: slotsError } = await slotsQuery;
 
   const courtOptions = (courts ?? []) as Court[];
-  const upcomingSlots = (slots ?? []) as unknown as CourtSlot[];
+  const slotsForSelectedDate = (slots ?? []) as unknown as CourtSlot[];
+
+  const filteredSlots =
+    selectedStatus === "all"
+      ? slotsForSelectedDate
+      : slotsForSelectedDate.filter(
+        (slot) => getSlotFilterStatus(slot) === selectedStatus,
+      );
 
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12">
@@ -381,21 +453,111 @@ export default async function AdminSlotsPage({
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-950">Filter slots</h2>
+
+        <form action="/admin/slots" method="get" className="mt-6 grid gap-4 md:grid-cols-3">
+          <div>
+            <label
+              htmlFor="filterDate"
+              className="text-sm font-medium text-slate-700"
+            >
+              Date
+            </label>
+            <input
+              id="filterDate"
+              name="date"
+              type="date"
+              required
+              defaultValue={selectedDate}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="filterCourtId"
+              className="text-sm font-medium text-slate-700"
+            >
+              Court
+            </label>
+            <select
+              id="filterCourtId"
+              name="courtId"
+              defaultValue={selectedCourtId}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="all">All courts</option>
+              {courtOptions.map((court) => (
+                <option key={court.id} value={court.id}>
+                  {court.name}
+                  {court.location_label ? ` — ${court.location_label}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="filterStatus"
+              className="text-sm font-medium text-slate-700"
+            >
+              Status
+            </label>
+            <select
+              id="filterStatus"
+              name="status"
+              defaultValue={selectedStatus}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="all">All statuses</option>
+              <option value="available">Available</option>
+              <option value="booked">Booked</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-3 md:col-span-3 sm:flex-row">
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Apply filters
+            </button>
+
+            <Link
+              href="/admin/slots"
+              className="rounded-lg border border-slate-300 px-5 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Reset filters
+            </Link>
+          </div>
+        </form>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950">
-          Upcoming slots
+          Slots for selected date
         </h2>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Showing {filteredSlots.length} slot{filteredSlots.length === 1 ? "" : "s"} for{" "}
+          <span className="font-medium text-slate-900">
+            {formatSlotDate(`${selectedDate}T00:00:00+08:00`)}
+          </span>
+          .
+        </p>
 
         {slotsError ? (
           <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
             {slotsError.message}
           </p>
-        ) : upcomingSlots.length === 0 ? (
+        ) : filteredSlots.length === 0 ? (
           <p className="mt-4 text-sm text-slate-600">
-            No upcoming slots have been created yet.
+            No slots match these filters.
           </p>
         ) : (
           <div className="mt-6 grid gap-3">
-            {upcomingSlots.map((slot) => {
+            {filteredSlots.map((slot) => {
               const slotStatus = getSlotStatus(slot);
               const activeBooking = hasActiveBooking(slot);
 
