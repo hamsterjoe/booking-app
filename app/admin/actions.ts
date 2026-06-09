@@ -88,6 +88,117 @@ export async function createCourtSlot(formData: FormData) {
   redirect(buildAdminSlotsRedirectPath("message", "Court slot created."));
 }
 
+export async function createBulkCourtSlots(formData: FormData) {
+  await requireAdmin();
+
+  const courtId = String(formData.get("courtId") ?? "");
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const durationMinutes = Number(formData.get("durationMinutes") ?? 60);
+
+  if (!courtId) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a court."));
+  }
+
+  if (!isValidDate(date)) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid date."));
+  }
+
+  if (!isValidTime(startTime)) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid start time."));
+  }
+
+  if (!isValidTime(endTime)) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid end time."));
+  }
+
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please enter a valid duration."));
+  }
+
+  const rangeStart = new Date(`${date}T${startTime}:00+08:00`);
+  const rangeEnd = new Date(`${date}T${endTime}:00+08:00`);
+
+  if (rangeEnd <= rangeStart) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        "End time must be after start time.",
+      ),
+    );
+  }
+
+  const slotsToInsert: Array<{
+    court_id: string;
+    start_time: string;
+    end_time: string;
+    is_available: boolean;
+  }> = [];
+
+  let currentStart = new Date(rangeStart);
+
+  while (currentStart < rangeEnd) {
+    const currentEnd = new Date(currentStart);
+    currentEnd.setMinutes(currentEnd.getMinutes() + durationMinutes);
+
+    if (currentEnd > rangeEnd) {
+      break;
+    }
+
+    slotsToInsert.push({
+      court_id: courtId,
+      start_time: currentStart.toISOString(),
+      end_time: currentEnd.toISOString(),
+      is_available: true,
+    });
+
+    currentStart = currentEnd;
+  }
+
+  if (slotsToInsert.length === 0) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        "No slots could be created from that time range.",
+      ),
+    );
+  }
+
+  if (slotsToInsert.length > 24) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        "Please create 24 slots or fewer at a time.",
+      ),
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase.from("court_slots").insert(slotsToInsert);
+
+  if (error) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        getCreateCourtSlotErrorMessage(error),
+      ),
+    );
+  }
+
+  revalidatePath("/admin/slots");
+  revalidatePath("/admin");
+  revalidatePath("/bookings/new");
+
+  redirect(
+    buildAdminSlotsRedirectPath(
+      "message",
+      `${slotsToInsert.length} slot${slotsToInsert.length === 1 ? "" : "s"} created.`,
+    ),
+  );
+}
+
 function buildAdminCourtsRedirectPath(type: "message" | "error", text: string) {
   const params = new URLSearchParams();
   params.set(type, text);

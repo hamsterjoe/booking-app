@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createCourtSlot, toggleCourtSlotAvailability } from "@/app/admin/actions";
+import { createCourtSlot, createBulkCourtSlots, toggleCourtSlotAvailability } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -260,6 +260,121 @@ export default async function AdminSlotsPage({
           <div className="md:col-span-2">
             <SubmitButton pendingText="Creating slot..." className="w-full">
               Create slot
+            </SubmitButton>
+          </div>
+        </form>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-950">
+          Bulk create slots
+        </h2>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Generate multiple slots for one court on one date.
+        </p>
+
+        <form action={createBulkCourtSlots} className="mt-6 grid gap-4 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor="bulkCourtId"
+              className="text-sm font-medium text-slate-700"
+            >
+              Court
+            </label>
+            <select
+              id="bulkCourtId"
+              name="courtId"
+              required
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="">Select a court</option>
+              {courtOptions.map((court) => (
+                <option key={court.id} value={court.id}>
+                  {court.name}
+                  {court.location_label ? ` — ${court.location_label}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="bulkDate"
+              className="text-sm font-medium text-slate-700"
+            >
+              Date
+            </label>
+            <input
+              id="bulkDate"
+              name="date"
+              type="date"
+              required
+              defaultValue={getTodayInMalaysia()}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="bulkStartTime"
+              className="text-sm font-medium text-slate-700"
+            >
+              Start time
+            </label>
+            <input
+              id="bulkStartTime"
+              name="startTime"
+              type="time"
+              required
+              defaultValue="08:00"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="bulkEndTime"
+              className="text-sm font-medium text-slate-700"
+            >
+              End time
+            </label>
+            <input
+              id="bulkEndTime"
+              name="endTime"
+              type="time"
+              required
+              defaultValue="12:00"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="bulkDurationMinutes"
+              className="text-sm font-medium text-slate-700"
+            >
+              Slot duration
+            </label>
+            <select
+              id="bulkDurationMinutes"
+              name="durationMinutes"
+              defaultValue="60"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+              <option value="120">120 minutes</option>
+            </select>
+          </div>
+
+          <div className="rounded-xl bg-blue-50 p-4 text-sm text-blue-700 md:col-span-2">
+            Example: 8:00 AM to 12:00 PM with 60-minute duration creates 4 slots.
+          </div>
+
+          <div className="md:col-span-2">
+            <SubmitButton pendingText="Creating slots..." className="w-full">
+              Create slots
             </SubmitButton>
           </div>
         </form>
