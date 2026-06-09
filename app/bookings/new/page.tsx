@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { createBooking } from "@/app/bookings/actions";
-import { SubmitButton } from "@/components/ui/SubmitButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Court = {
@@ -296,14 +294,12 @@ export default async function NewBookingPage({
                                                 </p>
 
                                                 {user ? (
-                                                    <form action={createBooking} className="mt-4">
-                                                        <input type="hidden" name="slotId" value={slot.id} />
-                                                        <input type="hidden" name="date" value={selectedDate} />
-
-                                                        <SubmitButton pendingText="Booking..." className="w-full">
-                                                            Book this court
-                                                        </SubmitButton>
-                                                    </form>
+                                                    <Link
+                                                        href={`/bookings/confirm?slotId=${slot.id}&date=${selectedDate}`}
+                                                        className="mt-4 block w-full rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                                                    >
+                                                        Review booking
+                                                    </Link>
                                                 ) : (
                                                     <Link
                                                         href="/login?error=Please log in to book a court"

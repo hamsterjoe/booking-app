@@ -49,10 +49,10 @@ export async function createBooking(formData: FormData) {
     }
 
     revalidatePath("/bookings/new");
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
 
-    redirect(
-        buildBookingRedirectPath(date, "message", "Your court booking is confirmed."),
-    );
+    redirect(buildBookingsRedirectPath("message", "Your court booking is confirmed."));
 }
 
 function buildBookingsRedirectPath(type: "message" | "error", text: string) {
