@@ -38,6 +38,10 @@ const authNavLinks = [
     label: "Dashboard",
     href: "/dashboard",
   },
+  {
+    label: "Profile",
+    href: "/profile",
+  },
 ];
 
 export async function Header() {

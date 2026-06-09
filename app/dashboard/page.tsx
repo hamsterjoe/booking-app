@@ -223,6 +223,13 @@ export default async function DashboardPage() {
             >
               Browse courts
             </Link>
+
+            <Link
+              href="/profile"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Profile settings
+            </Link>
           </div>
         </div>
 
