@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createCourtSlot, createBulkCourtSlots, toggleCourtSlotAvailability } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SlotFiltersForm } from "@/components/admin/SlotFiltersForm";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 type AdminSlotsPageProps = {
@@ -455,83 +456,16 @@ export default async function AdminSlotsPage({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950">Filter slots</h2>
 
-        <form action="/admin/slots" method="get" className="mt-6 grid gap-4 md:grid-cols-3">
-          <div>
-            <label
-              htmlFor="filterDate"
-              className="text-sm font-medium text-slate-700"
-            >
-              Date
-            </label>
-            <input
-              id="filterDate"
-              name="date"
-              type="date"
-              required
-              defaultValue={selectedDate}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-            />
-          </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950">Filter slots</h2>
 
-          <div>
-            <label
-              htmlFor="filterCourtId"
-              className="text-sm font-medium text-slate-700"
-            >
-              Court
-            </label>
-            <select
-              id="filterCourtId"
-              name="courtId"
-              defaultValue={selectedCourtId}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-            >
-              <option value="all">All courts</option>
-              {courtOptions.map((court) => (
-                <option key={court.id} value={court.id}>
-                  {court.name}
-                  {court.location_label ? ` — ${court.location_label}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="filterStatus"
-              className="text-sm font-medium text-slate-700"
-            >
-              Status
-            </label>
-            <select
-              id="filterStatus"
-              name="status"
-              defaultValue={selectedStatus}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-            >
-              <option value="all">All statuses</option>
-              <option value="available">Available</option>
-              <option value="booked">Booked</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-3 md:col-span-3 sm:flex-row">
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              Apply filters
-            </button>
-
-            <Link
-              href="/admin/slots"
-              className="rounded-lg border border-slate-300 px-5 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Reset filters
-            </Link>
-          </div>
-        </form>
+          <SlotFiltersForm
+            courtOptions={courtOptions}
+            selectedDate={selectedDate}
+            selectedCourtId={selectedCourtId}
+            selectedStatus={selectedStatus}
+          />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
