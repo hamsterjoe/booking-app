@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { adminCancelBooking } from "@/app/admin/actions";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -9,6 +11,8 @@ type AdminBookingDetailPageProps = {
     }>;
     searchParams: Promise<{
         returnTo?: string;
+        message?: string;
+        error?: string;
     }>;
 };
 
@@ -115,6 +119,24 @@ function getEffectiveBookingStatus(booking: Booking): BookingStatus {
     return hasEnded ? "completed" : booking.status;
 }
 
+function canAdminCancelBooking(booking: Booking) {
+    return booking.status === "pending" || booking.status === "confirmed";
+}
+
+function getAdminCancellationMessage(booking: Booking) {
+    const effectiveStatus = getEffectiveBookingStatus(booking);
+
+    if (booking.status === "cancelled") {
+        return "This booking has already been cancelled.";
+    }
+
+    if (effectiveStatus === "completed") {
+        return "This booking is completed and cannot be cancelled.";
+    }
+
+    return "Only pending or confirmed bookings can be cancelled.";
+}
+
 export default async function AdminBookingDetailPage({
     params,
     searchParams
@@ -210,6 +232,18 @@ export default async function AdminBookingDetailPage({
                 </p>
             </div>
 
+            {resolvedSearchParams.message ? (
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                    {resolvedSearchParams.message}
+                </div>
+            ) : null}
+
+            {resolvedSearchParams.error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {resolvedSearchParams.error}
+                </div>
+            ) : null}
+
             {profileError ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     Could not load customer profile: {profileError.message}
@@ -269,6 +303,36 @@ export default async function AdminBookingDetailPage({
                             <p className="break-all">{booking.user_id}</p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-950">Admin actions</h2>
+
+                <div className="mt-5 text-sm text-slate-600">
+                    {canAdminCancelBooking(booking) ? (
+                        <div className="space-y-4">
+                            <div className="rounded-xl bg-red-50 p-4 text-red-700">
+                                Cancelling this booking will mark it as cancelled and make the
+                                slot available again.
+                            </div>
+
+                            <form action={adminCancelBooking}>
+                                <input type="hidden" name="bookingId" value={booking.id} />
+
+                                <SubmitButton
+                                    pendingText="Cancelling booking..."
+                                    variant="danger"
+                                >
+                                    Cancel booking
+                                </SubmitButton>
+                            </form>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl bg-slate-100 p-4 text-slate-700">
+                            {getAdminCancellationMessage(booking)}
+                        </div>
+                    )}
                 </div>
             </div>
 

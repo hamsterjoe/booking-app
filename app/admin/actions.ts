@@ -88,6 +88,16 @@ export async function createCourtSlot(formData: FormData) {
   redirect(buildAdminSlotsRedirectPath("message", "Court slot created."));
 }
 
+function buildAdminBookingDetailRedirectPath(
+  bookingId: string,
+  type: "message" | "error",
+  text: string,
+) {
+  const params = new URLSearchParams();
+  params.set(type, text);
+  return `/admin/bookings/${bookingId}?${params.toString()}`;
+}
+
 export async function createBulkCourtSlots(formData: FormData) {
   await requireAdmin();
 
@@ -486,6 +496,46 @@ export async function toggleCourtSlotAvailability(formData: FormData) {
     buildAdminSlotsRedirectPath(
       "message",
       nextIsAvailable ? "Slot reactivated." : "Slot deactivated.",
+    ),
+  );
+}
+
+export async function adminCancelBooking(formData: FormData) {
+  await requireAdmin();
+
+  const bookingId = String(formData.get("bookingId") ?? "");
+
+  if (!bookingId) {
+    redirect("/admin/bookings?error=Missing selected booking.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase.rpc("admin_cancel_booking", {
+    p_booking_id: bookingId,
+  });
+
+  if (error) {
+    redirect(
+      buildAdminBookingDetailRedirectPath(
+        bookingId,
+        "error",
+        error.message ?? "Could not cancel booking.",
+      ),
+    );
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/bookings");
+  revalidatePath("/dashboard");
+  revalidatePath("/bookings/new");
+
+  redirect(
+    buildAdminBookingDetailRedirectPath(
+      bookingId,
+      "message",
+      "Booking cancelled.",
     ),
   );
 }
