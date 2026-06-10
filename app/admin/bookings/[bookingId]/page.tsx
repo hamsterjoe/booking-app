@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { adminCancelBooking } from "@/app/admin/actions";
+import { adminCancelBooking, updateAdminBookingNotes } from "@/app/admin/actions";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -256,6 +256,36 @@ export default async function AdminBookingDetailPage({
                         Booking summary
                     </h2>
 
+                    <form action={updateAdminBookingNotes} className="mt-6">
+                        <input type="hidden" name="bookingId" value={booking.id} />
+
+                        <label
+                            htmlFor="notes"
+                            className="text-sm font-medium text-slate-900"
+                        >
+                            Admin notes
+                        </label>
+
+                        <textarea
+                            id="notes"
+                            name="notes"
+                            rows={4}
+                            defaultValue={booking.notes ?? ""}
+                            placeholder="Add internal notes about this booking..."
+                            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+                        />
+
+                        <p className="mt-2 text-xs text-slate-500">
+                            These notes are for admin use only.
+                        </p>
+
+                        <div className="mt-4">
+                            <SubmitButton pendingText="Saving notes..." variant="secondary">
+                                Save notes
+                            </SubmitButton>
+                        </div>
+                    </form>
+
                     <div className="mt-5 grid gap-4 text-sm text-slate-600">
                         <div>
                             <p className="font-medium text-slate-900">Stored status</p>
@@ -275,11 +305,6 @@ export default async function AdminBookingDetailPage({
                         <div>
                             <p className="font-medium text-slate-900">Created</p>
                             <p>{formatDateTime(booking.created_at)}</p>
-                        </div>
-
-                        <div>
-                            <p className="font-medium text-slate-900">Notes</p>
-                            <p>{booking.notes || "No notes provided."}</p>
                         </div>
                     </div>
                 </div>

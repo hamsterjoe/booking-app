@@ -539,3 +539,42 @@ export async function adminCancelBooking(formData: FormData) {
     ),
   );
 }
+
+export async function updateAdminBookingNotes(formData: FormData) {
+  await requireAdmin();
+
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const notes = String(formData.get("notes") ?? "");
+
+  if (!bookingId) {
+    redirect("/admin/bookings?error=Missing selected booking.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase.rpc("admin_update_booking_notes", {
+    p_booking_id: bookingId,
+    p_notes: notes,
+  });
+
+  if (error) {
+    redirect(
+      buildAdminBookingDetailRedirectPath(
+        bookingId,
+        "error",
+        error.message ?? "Could not update booking notes.",
+      ),
+    );
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+
+  redirect(
+    buildAdminBookingDetailRedirectPath(
+      bookingId,
+      "message",
+      "Booking notes updated.",
+    ),
+  );
+}
