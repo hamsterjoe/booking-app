@@ -193,6 +193,24 @@ export default async function AdminBookingsPage({
     const selectedCourtId = params.courtId ?? "all";
     const selectedStatus = isValidStatus(params.status) ? params.status ?? "all" : "all";
 
+    const bookingListParams = new URLSearchParams();
+
+    if (selectedDate) {
+        bookingListParams.set("date", selectedDate);
+    }
+
+    if (selectedCourtId !== "all") {
+        bookingListParams.set("courtId", selectedCourtId);
+    }
+
+    if (selectedStatus !== "all") {
+        bookingListParams.set("status", selectedStatus);
+    }
+
+    const bookingListPath = bookingListParams.toString()
+        ? `/admin/bookings?${bookingListParams.toString()}`
+        : "/admin/bookings";
+
     const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase
@@ -468,7 +486,9 @@ export default async function AdminBookingsPage({
                                             </div>
                                             <div className="mt-5">
                                                 <Link
-                                                    href={`/admin/bookings/${booking.id}`}
+                                                    href={`/admin/bookings/${booking.id}?returnTo=${encodeURIComponent(
+                                                        bookingListPath,
+                                                    )}`}
                                                     className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                                                 >
                                                     View details
