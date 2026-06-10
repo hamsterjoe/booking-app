@@ -466,6 +466,14 @@ export default async function AdminBookingsPage({
                                                     <p>{formatDate(booking.created_at)}</p>
                                                 </div>
                                             </div>
+                                            <div className="mt-5">
+                                                <Link
+                                                    href={`/admin/bookings/${booking.id}`}
+                                                    className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                                                >
+                                                    View details
+                                                </Link>
+                                            </div>
                                         </article>
                                     );
                                 })}
