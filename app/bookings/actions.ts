@@ -63,12 +63,29 @@ function buildBookingsRedirectPath(type: "message" | "error", text: string) {
     return `/bookings?${params.toString()}`;
 }
 
+function buildBookingDetailRedirectPath(
+    bookingId: string,
+    type: "message" | "error",
+    text: string,
+) {
+    const params = new URLSearchParams();
+    params.set(type, text);
+    return `/bookings/${bookingId}?${params.toString()}`;
+}
+
 export async function cancelBooking(formData: FormData) {
     const bookingId = String(formData.get("bookingId") ?? "");
+    const redirectTarget = String(formData.get("redirectTarget") ?? "list");
 
     if (!bookingId) {
         redirect(buildBookingsRedirectPath("error", "Missing selected booking."));
     }
+
+    const buildRedirectPath =
+        redirectTarget === "detail"
+            ? buildBookingDetailRedirectPath
+            : (_bookingId: string, type: "message" | "error", text: string) =>
+                buildBookingsRedirectPath(type, text);
 
     const supabase = await createSupabaseServerClient();
 
@@ -85,14 +102,15 @@ export async function cancelBooking(formData: FormData) {
     });
 
     if (error) {
-        redirect(buildBookingsRedirectPath("error", error.message));
+        redirect(buildRedirectPath(bookingId, "error", error.message));
     }
 
     revalidatePath("/bookings");
+    revalidatePath(`/bookings/${bookingId}`);
     revalidatePath("/dashboard");
     revalidatePath("/bookings/new");
 
     redirect(
-        buildBookingsRedirectPath("message", "Your booking has been cancelled."),
+        buildRedirectPath(bookingId, "message", "Your booking has been cancelled."),
     );
 }

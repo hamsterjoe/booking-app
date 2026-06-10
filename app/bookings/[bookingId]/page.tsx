@@ -10,6 +10,8 @@ type BookingDetailPageProps = {
     }>;
     searchParams: Promise<{
         returnTo?: string;
+        message?: string;
+        error?: string;
     }>;
 };
 
@@ -231,6 +233,18 @@ export default async function BookingDetailPage({
                 </p>
             </div>
 
+            {resolvedSearchParams.message ? (
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                    {resolvedSearchParams.message}
+                </div>
+            ) : null}
+
+            {resolvedSearchParams.error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {resolvedSearchParams.error}
+                </div>
+            ) : null}
+
             <div className="grid gap-6 lg:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-slate-950">
@@ -274,6 +288,7 @@ export default async function BookingDetailPage({
 
                                 <form action={cancelBooking}>
                                     <input type="hidden" name="bookingId" value={booking.id} />
+                                    <input type="hidden" name="redirectTarget" value="detail" />
 
                                     <SubmitButton
                                         pendingText="Cancelling..."
