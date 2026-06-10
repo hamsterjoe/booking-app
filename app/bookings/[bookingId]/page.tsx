@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { cancelBooking } from "@/app/bookings/actions";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type BookingDetailPageProps = {
@@ -265,9 +267,22 @@ export default async function BookingDetailPage({
 
                     <div className="mt-5 text-sm text-slate-600">
                         {canCancelBooking(booking) ? (
-                            <div className="rounded-xl bg-green-50 p-4 text-green-700">
-                                This booking is still eligible for cancellation from your
-                                bookings page.
+                            <div className="space-y-4">
+                                <div className="rounded-xl bg-green-50 p-4 text-green-700">
+                                    This booking is still eligible for cancellation.
+                                </div>
+
+                                <form action={cancelBooking}>
+                                    <input type="hidden" name="bookingId" value={booking.id} />
+
+                                    <SubmitButton
+                                        pendingText="Cancelling..."
+                                        variant="danger"
+                                        className="w-full"
+                                    >
+                                        Cancel booking
+                                    </SubmitButton>
+                                </form>
                             </div>
                         ) : isWithinCancellationCutoff(booking) ? (
                             <div className="rounded-xl bg-yellow-50 p-4 text-yellow-700">
@@ -289,8 +304,7 @@ export default async function BookingDetailPage({
                         )}
 
                         <p className="mt-4">
-                            Cancellations are allowed up to 6 hours before your court
-                            time.
+                            Cancellations are allowed up to 6 hours before your court time.
                         </p>
                     </div>
                 </div>
