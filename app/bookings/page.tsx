@@ -209,7 +209,13 @@ function groupBookingsByDate(bookings: Booking[]) {
     return groups;
 }
 
-function BookingCard({ booking }: { booking: Booking }) {
+function BookingCard({
+    booking,
+    returnTo,
+}: {
+    booking: Booking;
+    returnTo: string;
+}) {
     const slot = booking.court_slots;
     const court = slot?.courts;
     const effectiveStatus = getEffectiveBookingStatus(booking);
@@ -267,20 +273,31 @@ function BookingCard({ booking }: { booking: Booking }) {
                 </div>
             </div>
 
-            {canCancelBooking(booking) ? (
-                <form action={cancelBooking} className="mt-5">
-                    <input type="hidden" name="bookingId" value={booking.id} />
+            <div className="mt-5 flex flex-col gap-3">
+                <Link
+                    href={`/bookings/${booking.id}?returnTo=${encodeURIComponent(returnTo)}`}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                    View details
+                </Link>
 
-                    <SubmitButton pendingText="Cancelling..." variant="danger" className="w-full">
-                        Cancel booking
-                    </SubmitButton>
-                </form>
-
-            ) : isWithinCancellationCutoff(booking) ? (
-                <p className="mt-5 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    This booking can no longer be cancelled because it starts within 6 hours.
-                </p>
-            ) : null}
+                {canCancelBooking(booking) ? (
+                    <form action={cancelBooking}>
+                        <input type="hidden" name="bookingId" value={booking.id} />
+                        <SubmitButton
+                            pendingText="Cancelling..."
+                            variant="danger"
+                            className="w-full"
+                        >
+                            Cancel booking
+                        </SubmitButton>
+                    </form>
+                ) : isWithinCancellationCutoff(booking) ? (
+                    <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        This booking can no longer be cancelled because it starts within 6 hours.
+                    </p>
+                ) : null}
+            </div>
 
         </article>
     );
@@ -289,9 +306,11 @@ function BookingCard({ booking }: { booking: Booking }) {
 function BookingGroupList({
     groups,
     emptyText,
+    returnTo,
 }: {
     groups: BookingGroup[];
     emptyText: string;
+    returnTo: string;
 }) {
     if (groups.length === 0) {
         return (
@@ -317,7 +336,7 @@ function BookingGroupList({
 
                     <div className="mt-3 grid gap-4">
                         {group.bookings.map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} />
+                            <BookingCard key={booking.id} booking={booking} returnTo={returnTo} />
                         ))}
                     </div>
                 </section>
@@ -331,6 +350,11 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
     const selectedFilter = isValidBookingFilter(params.filter)
         ? params.filter ?? "all"
         : "all";
+
+    const returnTo =
+        selectedFilter === "all"
+            ? "/bookings"
+            : `/bookings?filter=${selectedFilter}`;
 
     const supabase = await createSupabaseServerClient();
 
@@ -514,7 +538,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         <BookingGroupList
                             groups={upcomingBookingGroups}
                             emptyText="You do not have any upcoming bookings."
-                        />
+
+                            returnTo={returnTo} />
                     </div>
 
                     <div>
@@ -524,7 +549,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         <BookingGroupList
                             groups={pastBookingGroups}
                             emptyText="Your past bookings will appear here."
-                        />
+
+                            returnTo={returnTo} />
                     </div>
                 </>
             ) : selectedFilter === "upcoming" ? (
@@ -535,7 +561,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                     <BookingGroupList
                         groups={upcomingBookingGroups}
                         emptyText="You do not have any upcoming bookings."
-                    />
+
+                        returnTo={returnTo} />
                 </div>
             ) : selectedFilter === "completed" ? (
                 <div>
@@ -545,6 +572,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                     <BookingGroupList
                         groups={completedBookingGroups}
                         emptyText="You do not have any completed bookings."
+                        returnTo={returnTo}
                     />
                 </div>
             ) : (
@@ -555,6 +583,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                     <BookingGroupList
                         groups={cancelledBookingGroups}
                         emptyText="You do not have any cancelled bookings."
+                        returnTo={returnTo}
                     />
                 </div>
             )}
