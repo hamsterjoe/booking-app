@@ -102,7 +102,8 @@ export async function createBulkCourtSlots(formData: FormData) {
   await requireAdmin();
 
   const courtId = String(formData.get("courtId") ?? "");
-  const date = String(formData.get("date") ?? "");
+  const startDate = String(formData.get("startDate") ?? "");
+  const endDate = String(formData.get("endDate") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
   const durationMinutes = Number(formData.get("durationMinutes") ?? 60);
@@ -111,8 +112,12 @@ export async function createBulkCourtSlots(formData: FormData) {
     redirect(buildAdminSlotsRedirectPath("error", "Please choose a court."));
   }
 
-  if (!isValidDate(date)) {
-    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid date."));
+  if (!isValidDate(startDate)) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid start date."));
+  }
+
+  if (!isValidDate(endDate)) {
+    redirect(buildAdminSlotsRedirectPath("error", "Please choose a valid end date."));
   }
 
   if (!isValidTime(startTime)) {
@@ -127,14 +132,27 @@ export async function createBulkCourtSlots(formData: FormData) {
     redirect(buildAdminSlotsRedirectPath("error", "Please enter a valid duration."));
   }
 
-  const rangeStart = new Date(`${date}T${startTime}:00+08:00`);
-  const rangeEnd = new Date(`${date}T${endTime}:00+08:00`);
+  const startDateStart = new Date(`${startDate}T00:00:00+08:00`);
+  const endDateStart = new Date(`${endDate}T00:00:00+08:00`);
 
-  if (rangeEnd <= rangeStart) {
+  if (endDateStart < startDateStart) {
     redirect(
       buildAdminSlotsRedirectPath(
         "error",
-        "End time must be after start time.",
+        "End date must be the same as or after start date.",
+      ),
+    );
+  }
+
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const dayCount =
+    Math.floor((endDateStart.getTime() - startDateStart.getTime()) / oneDayMs) + 1;
+
+  if (dayCount > 14) {
+    redirect(
+      buildAdminSlotsRedirectPath(
+        "error",
+        "Please generate slots for 14 days or fewer at a time.",
       ),
     );
   }
@@ -146,43 +164,70 @@ export async function createBulkCourtSlots(formData: FormData) {
     is_available: boolean;
   }> = [];
 
-  let currentStart = new Date(rangeStart);
+  for (let dayIndex = 0; dayIndex < dayCount; dayIndex += 1) {
+    const currentDate = new Date(startDateStart);
+    currentDate.setUTCDate(currentDate.getUTCDate() + dayIndex);
 
-  while (currentStart < rangeEnd) {
-    const currentEnd = new Date(currentStart);
-    currentEnd.setMinutes(currentEnd.getMinutes() + durationMinutes);
+    const currentDateString = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kuala_Lumpur",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(currentDate);
 
-    if (currentEnd > rangeEnd) {
-      break;
+    const rangeStart = new Date(`${currentDateString}T${startTime}:00+08:00`);
+    const rangeEnd = new Date(`${currentDateString}T${endTime}:00+08:00`);
+
+    if (rangeEnd <= rangeStart) {
+      redirect(
+        buildAdminSlotsRedirectPath(
+          "error",
+          "End time must be after start time.",
+        ),
+      );
     }
 
-    slotsToInsert.push({
-      court_id: courtId,
-      start_time: currentStart.toISOString(),
-      end_time: currentEnd.toISOString(),
-      is_available: true,
-    });
+    let currentStart = new Date(rangeStart);
 
-    currentStart = currentEnd;
+    while (currentStart < rangeEnd) {
+      const currentEnd = new Date(currentStart);
+      currentEnd.setMinutes(currentEnd.getMinutes() + durationMinutes);
+
+      if (currentEnd > rangeEnd) {
+        break;
+      }
+
+      slotsToInsert.push({
+        court_id: courtId,
+        start_time: currentStart.toISOString(),
+        end_time: currentEnd.toISOString(),
+        is_available: true,
+      });
+
+      currentStart = currentEnd;
+    }
   }
 
   if (slotsToInsert.length === 0) {
     redirect(
       buildAdminSlotsRedirectPath(
         "error",
-        "No slots could be created from that time range.",
+        "No slots could be created from that date and time range.",
       ),
     );
   }
 
-  if (slotsToInsert.length > 24) {
+  if (slotsToInsert.length > 100) {
     redirect(
       buildAdminSlotsRedirectPath(
         "error",
-        "Please create 24 slots or fewer at a time.",
+        "Please generate 100 slots or fewer at a time.",
       ),
     );
   }
+
+  const firstGeneratedSlot = slotsToInsert[0];
+  const lastGeneratedSlot = slotsToInsert[slotsToInsert.length - 1];
 
   const supabase = await createSupabaseServerClient();
 
@@ -190,8 +235,8 @@ export async function createBulkCourtSlots(formData: FormData) {
     .from("court_slots")
     .select("start_time, end_time")
     .eq("court_id", courtId)
-    .gte("start_time", rangeStart.toISOString())
-    .lt("start_time", rangeEnd.toISOString());
+    .gte("start_time", firstGeneratedSlot.start_time)
+    .lte("start_time", lastGeneratedSlot.start_time);
 
   if (existingSlotsError) {
     redirect(
@@ -224,7 +269,7 @@ export async function createBulkCourtSlots(formData: FormData) {
     redirect(
       buildAdminSlotsRedirectPath(
         "message",
-        "No new slots created. All slots in this range already exist.",
+        "No new slots created. All slots in this date range already exist.",
       ),
     );
   }
@@ -244,8 +289,9 @@ export async function createBulkCourtSlots(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/bookings/new");
 
-  const createdText = `${newSlotsToInsert.length} slot${newSlotsToInsert.length === 1 ? "" : "s"
-    } created`;
+  const createdText = `${newSlotsToInsert.length} slot${
+    newSlotsToInsert.length === 1 ? "" : "s"
+  } created`;
 
   const skippedText =
     skippedCount > 0

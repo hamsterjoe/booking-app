@@ -373,14 +373,31 @@ export default async function AdminSlotsPage({
 
           <div>
             <label
-              htmlFor="bulkDate"
+              htmlFor="bulkStartDate"
               className="text-sm font-medium text-slate-700"
             >
-              Date
+              Start date
             </label>
             <input
-              id="bulkDate"
-              name="date"
+              id="bulkStartDate"
+              name="startDate"
+              type="date"
+              required
+              defaultValue={getTodayInMalaysia()}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="bulkEndDate"
+              className="text-sm font-medium text-slate-700"
+            >
+              End date
+            </label>
+            <input
+              id="bulkEndDate"
+              name="endDate"
               type="date"
               required
               defaultValue={getTodayInMalaysia()}
@@ -442,7 +459,7 @@ export default async function AdminSlotsPage({
           </div>
 
           <div className="rounded-xl bg-blue-50 p-4 text-sm text-blue-700 md:col-span-2">
-            Example: 8:00 AM to 12:00 PM with 60-minute duration creates 4 slots.
+            Example: 10 Jun to 14 Jun, 8:00 AM to 12:00 PM, with 60-minute duration creates 4 slots per day. Duplicate slots are skipped automatically.
           </div>
 
           <div className="md:col-span-2">
