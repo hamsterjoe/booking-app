@@ -12,7 +12,23 @@ function buildProfileRedirectPath(type: "message" | "error", text: string) {
 
 export async function updateProfile(formData: FormData) {
   const fullName = String(formData.get("fullName") ?? "").trim();
-  const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
+  const countryCode = String(formData.get("countryCode") ?? "+60").trim();
+  const phoneLocalNumber = String(formData.get("phoneLocalNumber") ?? "").trim();
+
+  const cleanedPhoneLocalNumber = phoneLocalNumber.replace(/[\s-]/g, "");
+
+  if (phoneLocalNumber && !/^\d{7,15}$/.test(cleanedPhoneLocalNumber)) {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        "Please enter a valid phone number with 7 to 15 digits.",
+      ),
+    );
+  }
+
+  const phoneNumber = cleanedPhoneLocalNumber
+    ? `${countryCode} ${cleanedPhoneLocalNumber}`
+    : "";
 
   const supabase = await createSupabaseServerClient();
 

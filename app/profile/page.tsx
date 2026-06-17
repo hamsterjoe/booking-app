@@ -17,6 +17,43 @@ type Profile = {
   role: string;
 };
 
+const countryCodeOptions = [
+  { label: "Malaysia (+60)", value: "+60" },
+  { label: "Singapore (+65)", value: "+65" },
+  { label: "Indonesia (+62)", value: "+62" },
+  { label: "Thailand (+66)", value: "+66" },
+  { label: "United States (+1)", value: "+1" },
+  { label: "United Kingdom (+44)", value: "+44" },
+];
+
+function getPhoneParts(phoneNumber: string | null | undefined) {
+  if (!phoneNumber) {
+    return {
+      countryCode: "+60",
+      localNumber: "",
+    };
+  }
+
+  const matchingCountryCode = countryCodeOptions.find((option) =>
+    phoneNumber.startsWith(option.value),
+  );
+
+  if (!matchingCountryCode) {
+    return {
+      countryCode: "+60",
+      localNumber: phoneNumber,
+    };
+  }
+
+  return {
+    countryCode: matchingCountryCode.value,
+    localNumber: phoneNumber
+      .slice(matchingCountryCode.value.length)
+      .trim()
+      .replace(/[\s-]/g, ""),
+  };
+}
+
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const params = await searchParams;
 
@@ -38,6 +75,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     .maybeSingle();
 
   const currentProfile = profile as Profile | null;
+  const phoneParts = getPhoneParts(currentProfile?.phone_number);
 
   return (
     <section className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-12">
@@ -126,21 +164,40 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
           <div>
             <label
-              htmlFor="phoneNumber"
+              htmlFor="phoneLocalNumber"
               className="text-sm font-medium text-slate-700"
             >
               Phone number
             </label>
-            <input
-              id="phoneNumber"
-              name="phoneNumber"
-              type="tel"
-              defaultValue={currentProfile?.phone_number ?? ""}
-              placeholder="012-345 6789"
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-            />
+
+            <div className="mt-2 grid gap-3 sm:grid-cols-[180px_1fr]">
+              <select
+                id="countryCode"
+                name="countryCode"
+                defaultValue={phoneParts.countryCode}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              >
+                {countryCodeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                id="phoneLocalNumber"
+                name="phoneLocalNumber"
+                type="tel"
+                defaultValue={phoneParts.localNumber}
+                placeholder="123456789"
+                inputMode="numeric"
+                pattern="[0-9\s-]{7,15}"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              />
+            </div>
+
             <p className="mt-2 text-xs text-slate-500">
-              This can help Picko contact you about your bookings later.
+              Enter 7 to 15 digits. Picko will save this with the selected country code.
             </p>
           </div>
         </div>
