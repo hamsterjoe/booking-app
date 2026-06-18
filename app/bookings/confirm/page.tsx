@@ -26,6 +26,11 @@ type CourtSlot = {
     courts: Court | null;
 };
 
+type Profile = {
+    full_name: string | null;
+    phone_number: string | null;
+};
+
 function buildNewBookingRedirectPath(
     date: string,
     type: "message" | "error",
@@ -40,6 +45,16 @@ function buildNewBookingRedirectPath(
     params.set(type, text);
 
     return `/bookings/new?${params.toString()}`;
+}
+
+function buildProfileRedirectPath(message: string) {
+    const params = new URLSearchParams();
+    params.set("message", message);
+    return `/profile?${params.toString()}`;
+}
+
+function isProfileComplete(profile: Profile | null) {
+    return Boolean(profile?.full_name?.trim() && profile?.phone_number?.trim());
 }
 
 function formatPrice(cents: number) {
@@ -93,6 +108,22 @@ export default async function ConfirmBookingPage({
 
     if (!user) {
         redirect("/login?error=Please log in to book a court");
+    }
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone_number")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    const currentProfile = profile as Profile | null;
+
+    if (!isProfileComplete(currentProfile)) {
+        redirect(
+            buildProfileRedirectPath(
+                "Please complete your profile before booking a court.",
+            ),
+        );
     }
 
     const { data, error } = await supabase

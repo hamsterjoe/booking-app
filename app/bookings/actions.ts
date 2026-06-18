@@ -20,6 +20,21 @@ function buildBookingRedirectPath(
     return `/bookings/new?${params.toString()}`;
 }
 
+type Profile = {
+    full_name: string | null;
+    phone_number: string | null;
+};
+
+function buildProfileRedirectPath(message: string) {
+    const params = new URLSearchParams();
+    params.set("message", message);
+    return `/profile?${params.toString()}`;
+}
+
+function isProfileComplete(profile: Profile | null) {
+    return Boolean(profile?.full_name?.trim() && profile?.phone_number?.trim());
+}
+
 export async function createBooking(formData: FormData) {
     const slotId = String(formData.get("slotId") ?? "");
     const date = String(formData.get("date") ?? "");
@@ -35,11 +50,27 @@ export async function createBooking(formData: FormData) {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-
+    
     if (!user) {
         redirect("/login?error=Please log in to book a court");
     }
-
+    
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone_number")
+        .eq("id", user.id)
+        .maybeSingle();
+    
+    const currentProfile = profile as Profile | null;
+    
+    if (!isProfileComplete(currentProfile)) {
+        redirect(
+            buildProfileRedirectPath(
+                "Please complete your profile before booking a court.",
+            ),
+        );
+    }
+    
     const { error } = await supabase.rpc("create_booking_for_slot", {
         p_slot_id: slotId,
     });
