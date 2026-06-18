@@ -8,6 +8,7 @@ type ProfilePageProps = {
   searchParams: Promise<{
     message?: string;
     error?: string;
+    returnTo?: string;
   }>;
 };
 
@@ -56,6 +57,10 @@ function getPhoneParts(phoneNumber: string | null | undefined) {
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const params = await searchParams;
+
+  const safeReturnTo = params.returnTo?.startsWith("/bookings/confirm")
+    ? params.returnTo
+    : "";
 
   const supabase = await createSupabaseServerClient();
 
@@ -140,6 +145,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         action={updateProfile}
         className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
+        <input type="hidden" name="returnTo" value={safeReturnTo} />
+
         <h2 className="text-lg font-semibold text-slate-950">
           Edit profile
         </h2>

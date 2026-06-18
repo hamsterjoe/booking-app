@@ -47,9 +47,11 @@ function buildNewBookingRedirectPath(
     return `/bookings/new?${params.toString()}`;
 }
 
-function buildProfileRedirectPath(message: string) {
+function buildProfileRedirectPath(message: string, returnTo: string) {
     const params = new URLSearchParams();
     params.set("message", message);
+    params.set("returnTo", returnTo);
+
     return `/profile?${params.toString()}`;
 }
 
@@ -119,9 +121,18 @@ export default async function ConfirmBookingPage({
     const currentProfile = profile as Profile | null;
 
     if (!isProfileComplete(currentProfile)) {
+        const returnToParams = new URLSearchParams();
+    
+        returnToParams.set("slotId", slotId);
+    
+        if (date) {
+            returnToParams.set("date", date);
+        }
+    
         redirect(
             buildProfileRedirectPath(
                 "Please complete your profile before booking a court.",
+                `/bookings/confirm?${returnToParams.toString()}`,
             ),
         );
     }
