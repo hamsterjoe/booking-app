@@ -122,13 +122,13 @@ export default async function ConfirmBookingPage({
 
     if (!isProfileComplete(currentProfile)) {
         const returnToParams = new URLSearchParams();
-    
+
         returnToParams.set("slotId", slotId);
-    
+
         if (date) {
             returnToParams.set("date", date);
         }
-    
+
         redirect(
             buildProfileRedirectPath(
                 "Please complete your profile before booking a court.",
