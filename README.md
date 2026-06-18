@@ -1,10 +1,12 @@
 # Picko — Pickleball Court Booking App
 
-Picko is a full-stack pickleball court booking web app built with Next.js, TypeScript, Tailwind CSS, and Supabase.
+Picko is a full-stack pickleball court booking platform built with Next.js, TypeScript, Tailwind CSS, and Supabase.
 
-The app allows customers to browse courts, choose a date and time, review booking details, confirm a booking, view booking history, cancel eligible bookings, and manage basic profile information.
+The project started as a general booking app and evolved into a focused pickleball court booking product with customer booking flows, admin operations, Supabase Auth, PostgreSQL, Row Level Security, SQL RPC functions, and Vercel deployment.
 
-Admins can manage courts, create slots, bulk-generate availability, control slot availability, view all bookings, and inspect customer profile details.
+Customers can browse courts, choose a date and time, review booking details, confirm a booking, manage their profile, view booking history, filter bookings, and cancel eligible bookings.
+
+Admins can manage courts, generate availability slots, bulk-create slots across date ranges, control slot availability, view customer bookings, filter bookings, inspect booking details, cancel bookings, and add internal booking notes.
 
 ## Live Demo
 
@@ -15,6 +17,29 @@ https://picko-booking-app.vercel.app/dashboard
 ## Repository
 
 https://github.com/hamsterjoe/booking-app
+
+## Screenshots
+
+> Screenshots will be added as the UI becomes more polished.
+
+Suggested screenshots:
+public/screenshots/homepage.png
+public/screenshots/booking-flow.png
+public/screenshots/booking-confirmation.png
+public/screenshots/my-bookings.png
+public/screenshots/profile-settings.png
+public/screenshots/admin-dashboard.png
+public/screenshots/admin-slots.png
+public/screenshots/admin-bookings.png
+public/screenshots/admin-booking-detail.png
+
+Future screenshot layout: 
+### Customer Booking Flow
+public/screenshots/booking-flow.png
+### Admin Slot Management
+public/screenshots/admin-slots.png
+### Admin Booking Detail
+public/screenshots/admin-booking-detail.png
 
 ---
 
@@ -91,6 +116,26 @@ https://github.com/hamsterjoe/booking-app
 
 ---
 
+## Portfolio Highlights
+
+This project demonstrates:
+
+- Full-stack application development with the Next.js App Router
+- Authentication and protected routes with Supabase Auth
+- Relational database design with PostgreSQL
+- Row Level Security policies for user/admin access control
+- SQL RPC functions for controlled business logic
+- Server Actions for form mutations
+- Admin-only operational workflows
+- Date/time-based booking availability
+- Double-booking prevention
+- User profile requirements before booking
+- Dynamic routes for booking and admin detail pages
+- Production deployment on Vercel
+- Practical product iteration from generic booking app to pickleball-specific booking platform
+
+---
+
 ## Main Booking Flow
 
 Picko uses a date/time-first booking flow:
@@ -98,6 +143,33 @@ Picko uses a date/time-first booking flow:
 Choose date → See available times → Choose available court → Review booking → Confirm booking
 
 This flow was chosen because pickleball courts are mostly similar resources. Users usually care more about when they can play than choosing a specific court first.
+
+---
+
+## Demo Walkthrough
+
+A typical customer flow:
+
+1.Register or log in
+2.Complete profile with name and phone number
+3. Choose a booking date
+4. Review available times
+5.Select an available court
+6. Review booking details
+7. Confirm booking
+8. View booking in My bookings
+9. Cancel booking if eligible
+
+A typical admin flow:
+
+1. Log in as an admin
+2. Create or edit courts
+3. Generate court slots individually or in bulk
+4. Filter slots by date, court, and status
+5. Review customer bookings
+6. Open booking details
+7. Add internal admin notes
+8. Cancel bookings operationally if needed
 
 ---
 
@@ -455,14 +527,12 @@ Current limitations include:
 
 - No payment integration yet
 - No email notifications yet
-- No calendar component yet
 - No recurring automatic slot generation yet
-- No multi-slot booking yet
-- No admin booking cancellation controls yet
 - No advanced customer search
-- No customer email display in admin booking views
 - No visual redesign yet
-- No analytics dashboard yet
+- No automated notifications yet
+- No real payment collection yet
+- No screenshot gallery yet
 
 ---
 
@@ -470,21 +540,19 @@ Current limitations include:
 
 Future milestones may include:
 
-- Admin booking detail page
-- Admin booking cancellation controls
 - Better customer search for admins
-- User phone validation and country code dropdown
-- Date/court filters for user booking history
-- Bulk slot generation across date ranges
-- Automatic slot generation for future days
 - Peak and non-peak pricing
 - Payment provider research
 - Stripe or Malaysian payment provider integration
 - Email or WhatsApp booking confirmations
-- Modern calendar picker
 - Major UI/UX redesign
 - Performance optimization with fewer queries or RPC summary functions
-- README screenshots and architecture diagrams
+- Add real README screenshots
+- Add admin customer search
+- Add booking confirmation emails or WhatsApp notifications
+- Add payment planning and provider comparison
+- Add route-specific skeleton loading screens during redesign
+- Add automated tests for booking and admin flows
 
 ---
 
