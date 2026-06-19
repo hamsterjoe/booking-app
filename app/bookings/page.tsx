@@ -506,6 +506,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
             </div>
 
             <form
+                key={selectedFilter}
                 action="/bookings"
                 method="get"
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"

@@ -473,16 +473,13 @@ export default async function AdminSlotsPage({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950">Filter slots</h2>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Filter slots</h2>
-
-          <SlotFiltersForm
-            courtOptions={courtOptions}
-            selectedDate={selectedDate}
-            selectedCourtId={selectedCourtId}
-            selectedStatus={selectedStatus}
-          />
-        </div>
+        <SlotFiltersForm
+          key={`${selectedDate}-${selectedCourtId}-${selectedStatus}`}
+          courtOptions={courtOptions}
+          selectedDate={selectedDate}
+          selectedCourtId={selectedCourtId}
+          selectedStatus={selectedStatus}
+        />
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -512,13 +509,6 @@ export default async function AdminSlotsPage({
               Try changing the date, court, or status filter. You can also create new
               slots using the forms above.
             </p>
-
-            <Link
-              href="/admin/slots"
-              className="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Reset filters
-            </Link>
           </div>
         ) : (
           <div className="mt-6 grid gap-3">
