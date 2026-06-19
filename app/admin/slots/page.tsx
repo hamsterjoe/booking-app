@@ -503,9 +503,23 @@ export default async function AdminSlotsPage({
             {slotsError.message}
           </p>
         ) : filteredSlots.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">
-            No slots match these filters.
-          </p>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <h3 className="font-semibold text-slate-950">
+              No slots match these filters
+            </h3>
+
+            <p className="mt-2">
+              Try changing the date, court, or status filter. You can also create new
+              slots using the forms above.
+            </p>
+
+            <Link
+              href="/admin/slots"
+              className="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Reset filters
+            </Link>
+          </div>
         ) : (
           <div className="mt-6 grid gap-3">
             {filteredSlots.map((slot) => {

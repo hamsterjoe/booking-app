@@ -233,7 +233,21 @@ export default async function NewBookingPage({
                     </div>
                 ) : groupedSlots.length === 0 ? (
                     <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                        No available slots for this date.
+                        <h3 className="font-semibold text-slate-950">
+                            No available slots for this date
+                        </h3>
+
+                        <p className="mt-2 text-sm">
+                            Try choosing another date, or browse the available Picko courts before
+                            checking another time.
+                        </p>
+
+                        <Link
+                            href="/courts"
+                            className="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                            Browse courts
+                        </Link>
                     </div>
                 ) : (
                     <div className="mt-6 flex flex-col gap-4">

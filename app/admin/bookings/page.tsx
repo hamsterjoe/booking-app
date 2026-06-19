@@ -400,7 +400,20 @@ export default async function AdminBookingsPage({
                 </div>
             ) : bookings.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                    No bookings match these filters.
+                    <h3 className="font-semibold text-slate-950">
+                        No bookings match these filters
+                    </h3>
+
+                    <p className="mt-2 text-sm">
+                        Try changing the date, court, or status filter to find other bookings.
+                    </p>
+
+                    <Link
+                        href="/admin/bookings"
+                        className="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                        Reset filters
+                    </Link>
                 </div>
             ) : (
                 <div className="grid gap-6">

@@ -307,15 +307,28 @@ function BookingGroupList({
     groups,
     emptyText,
     returnTo,
+    actionHref,
+    actionLabel,
 }: {
     groups: BookingGroup[];
     emptyText: string;
     returnTo: string;
+    actionHref?: string;
+    actionLabel?: string;
 }) {
     if (groups.length === 0) {
         return (
             <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                {emptyText}
+                <p>{emptyText}</p>
+
+                {actionHref && actionLabel ? (
+                    <Link
+                        href={actionHref}
+                        className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                        {actionLabel}
+                    </Link>
+                ) : null}
             </div>
         );
     }
@@ -336,7 +349,11 @@ function BookingGroupList({
 
                     <div className="mt-3 grid gap-4">
                         {group.bookings.map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} returnTo={returnTo} />
+                            <BookingCard
+                                key={booking.id}
+                                booking={booking}
+                                returnTo={returnTo}
+                            />
                         ))}
                     </div>
                 </section>
@@ -538,8 +555,11 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         <BookingGroupList
                             groups={upcomingBookingGroups}
                             emptyText="You do not have any upcoming bookings."
+                            returnTo={returnTo}
+                            actionHref="/bookings/new"
+                            actionLabel="Book a court"
+                        />
 
-                            returnTo={returnTo} />
                     </div>
 
                     <div>
@@ -548,9 +568,11 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         </h2>
                         <BookingGroupList
                             groups={pastBookingGroups}
-                            emptyText="Your past bookings will appear here."
-
-                            returnTo={returnTo} />
+                            emptyText="Your completed and cancelled bookings will appear here once you make a booking."
+                            returnTo={returnTo}
+                            actionHref="/bookings/new"
+                            actionLabel="Book a court"
+                        />
                     </div>
                 </>
             ) : selectedFilter === "upcoming" ? (
@@ -561,8 +583,10 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                     <BookingGroupList
                         groups={upcomingBookingGroups}
                         emptyText="You do not have any upcoming bookings."
-
-                        returnTo={returnTo} />
+                        returnTo={returnTo}
+                        actionHref="/bookings/new"
+                        actionLabel="Book a court"
+                    />
                 </div>
             ) : selectedFilter === "completed" ? (
                 <div>
@@ -573,6 +597,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         groups={completedBookingGroups}
                         emptyText="You do not have any completed bookings."
                         returnTo={returnTo}
+                        actionHref="/bookings/new"
+                        actionLabel="Book a court"
                     />
                 </div>
             ) : (
@@ -584,6 +610,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         groups={cancelledBookingGroups}
                         emptyText="You do not have any cancelled bookings."
                         returnTo={returnTo}
+                        actionHref="/bookings/new"
+                        actionLabel="Book a court"
                     />
                 </div>
             )}
