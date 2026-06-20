@@ -8,6 +8,7 @@ type AdminBookingsPageProps = {
         date?: string;
         courtId?: string;
         status?: string;
+        search?: string;
     }>;
 };
 
@@ -192,6 +193,7 @@ export default async function AdminBookingsPage({
     const selectedDate = isValidDateInput(params.date) ? params.date! : "";
     const selectedCourtId = params.courtId ?? "all";
     const selectedStatus = isValidStatus(params.status) ? params.status ?? "all" : "all";
+    const selectedSearch = String(params.search ?? "").trim();
 
     const bookingListParams = new URLSearchParams();
 
@@ -205,6 +207,10 @@ export default async function AdminBookingsPage({
 
     if (selectedStatus !== "all") {
         bookingListParams.set("status", selectedStatus);
+    }
+
+    if (selectedSearch) {
+        bookingListParams.set("search", selectedSearch);
     }
 
     const bookingListPath = bookingListParams.toString()
@@ -262,21 +268,34 @@ export default async function AdminBookingsPage({
         profiles.map((profile) => [profile.id, profile]),
     );
 
+    const normalizedSearch = selectedSearch.toLowerCase();
+
     const filteredBookings = allBookings.filter((booking) => {
         const effectiveStatus = getEffectiveBookingStatus(booking);
         const bookingDateKey = getBookingDateKey(booking);
         const bookingCourtId = booking.court_slots?.courts?.id;
-
+        const profile = profilesByUserId.get(booking.user_id);
+    
+        const searchableText = [
+            profile?.full_name ?? "",
+            profile?.phone_number ?? "",
+            booking.user_id,
+        ]
+            .join(" ")
+            .toLowerCase();
+    
         const matchesStatus =
             selectedStatus === "all" || effectiveStatus === selectedStatus;
-
-        const matchesDate =
-            !selectedDate || bookingDateKey === selectedDate;
-
+    
+        const matchesDate = !selectedDate || bookingDateKey === selectedDate;
+    
         const matchesCourt =
             selectedCourtId === "all" || bookingCourtId === selectedCourtId;
-
-        return matchesStatus && matchesDate && matchesCourt;
+    
+        const matchesSearch =
+            !normalizedSearch || searchableText.includes(normalizedSearch);
+    
+        return matchesStatus && matchesDate && matchesCourt && matchesSearch;
     });
 
     const bookings = sortBookingsBySlotTime(filteredBookings);
@@ -306,14 +325,14 @@ export default async function AdminBookingsPage({
             </div>
 
             <form
-                key={`${selectedDate}-${selectedCourtId}-${selectedStatus}`}
+                key={`${selectedDate}-${selectedCourtId}-${selectedStatus}-${selectedSearch}`}
                 action="/admin/bookings"
                 method="get"
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
             >
                 <h2 className="text-lg font-semibold text-slate-950">Filter bookings</h2>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-4">
                     <div>
                         <label
                             htmlFor="date"
@@ -373,6 +392,23 @@ export default async function AdminBookingsPage({
                             <option value="completed">Completed</option>
                         </select>
                     </div>
+
+                    <div>
+                        <label
+                            htmlFor="search"
+                            className="text-sm font-medium text-slate-700"
+                        >
+                            Search
+                        </label>
+                        <input
+                            id="search"
+                            name="search"
+                            type="search"
+                            defaultValue={selectedSearch}
+                            placeholder="Name, phone, or user ID"
+                            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        />
+                    </div>
                 </div>
 
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -406,7 +442,7 @@ export default async function AdminBookingsPage({
                     </h3>
 
                     <p className="mt-2 text-sm">
-                        Try changing the date, court, or status filter to find other bookings.
+                        Try changing the date, court, or status, or search term to find other bookings.
                     </p>
 
                     <Link
