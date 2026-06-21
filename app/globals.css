@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {
@@ -14,4 +14,9 @@ html {
 
 body {
   margin: 0;
+}
+
+::selection {
+  background: rgba(190, 242, 100, 0.35);
+  color: white;
 }

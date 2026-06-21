@@ -2,51 +2,51 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <section className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 lg:flex-row lg:items-center lg:py-24">
-      <div className="max-w-2xl">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-blue-600">
-          Picko Pickleball
+    <section className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 py-32 text-white">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-30 bg-cover bg-center opacity-70"
+        style={{ backgroundImage: "url('/images/picko-hero.jpg')" }}
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_center,rgba(22,163,74,0.18),transparent_32rem)]"
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-black/70 via-black/55 to-black"
+      />
+
+      <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+        <p className="mb-5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-lime-200 shadow-2xl backdrop-blur-md">
+          Picko by TJY
         </p>
 
-        <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-          Book pickleball courts at your fingertips.
+        <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+        Picko Pickleball
         </h1>
 
-        <p className="mt-6 text-lg leading-8 text-slate-600">
-          A beginner-friendly full-stack pickleball court booking app built with Next.js,
-          TypeScript, Tailwind CSS, and Supabase. Find your next game today.
+        <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-200 sm:text-lg">
+        Book your next pickleball court in seconds from your streamlined booking site preferred by thousands nationwide.
         </p>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
           <Link
-            href="/register"
-            className="rounded-lg bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            href="/bookings/new"
+            className="rounded-xl bg-lime-300 px-6 py-3 text-sm font-bold text-zinc-950 shadow-[0_0_35px_rgba(190,242,100,0.35)] transition hover:bg-lime-200"
           >
-            Create an account
+            Book a court now
           </Link>
 
           <Link
-            href="/login"
-            className="rounded-lg border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            href="/courts"
+            className="rounded-xl border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/15"
           >
-            Log in
+            View courts
           </Link>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-950">Project roadmap</h2>
-
-        <ul className="mt-4 space-y-3 text-sm text-slate-600">
-          <li>✅ Project setup</li>
-          <li>✅ Basic layout and navigation</li>
-          <li>✅ Supabase authentication</li>
-          <li>✅ User dashboard</li>
-          <li>✅ Booking system</li>
-          <li>✅ Booking history</li>
-          <li>✅ Deployment to Vercel</li>
-          <li>⬜ RM75,000 MRR</li>
-        </ul>
       </div>
     </section>
   );
