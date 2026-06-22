@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { register } from "@/app/auth/actions";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { RegisterForm } from "@/components/auth/RegisterForm";
 
 type RegisterCardProps = {
     error?: string;
@@ -61,53 +60,7 @@ export function RegisterCard({
                     </div>
                 ) : null}
 
-                <form action={register} className="mt-6 space-y-4">
-                    <input type="hidden" name="errorRedirectTo" value={errorRedirectTo} />
-
-                    <div>
-                        <label htmlFor="email" className="text-sm font-semibold text-white">
-                            Email address
-                        </label>
-
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            required
-                            placeholder="you@example.com"
-                            className="mt-2 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-sky-300 focus:ring-4 focus:ring-sky-300/10"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="text-sm font-semibold text-white"
-                        >
-                            Password
-                        </label>
-
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            required
-                            minLength={6}
-                            placeholder="Create a password"
-                            className="mt-2 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-sky-300 focus:ring-4 focus:ring-sky-300/10"
-                        />
-                        <p className="mt-2 text-xs text-zinc-500">
-                            Use at least 6 characters.
-                        </p>
-                    </div>
-
-                    <SubmitButton
-                        pendingText="Creating account..."
-                        className="w-full rounded-xl bg-white px-5 py-3 text-sm font-bold text-zinc-950 hover:bg-zinc-200 disabled:bg-zinc-700 disabled:text-zinc-400"
-                    >
-                        Sign up
-                    </SubmitButton>
-                </form>
+                <RegisterForm errorRedirectTo={errorRedirectTo} />
             </div>
 
             <div className="border-t border-white/10 bg-white/[0.03] px-6 py-4 text-center text-sm text-zinc-400 sm:px-8">                Already have an account?{" "}
