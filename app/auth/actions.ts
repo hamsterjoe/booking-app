@@ -6,6 +6,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function register(formData: FormData) {
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
+  const errorRedirectTo = String(formData.get("errorRedirectTo") ?? "/register");
+
+  const safeErrorRedirectTo =
+    errorRedirectTo === "/?auth=signup" ? "/?auth=signup" : "/register";
 
   const supabase = await createSupabaseServerClient();
 
@@ -14,10 +18,17 @@ export async function register(formData: FormData) {
     password,
   });
 
-if (error) {
-  console.error("Registration error:", error.message);
-  redirect(`/register?error=${encodeURIComponent(error.message)}`);
-}
+  if (error) {
+    console.error("Registration error:", error.message);
+
+    const separator = safeErrorRedirectTo.includes("?") ? "&" : "?";
+
+    redirect(
+      `${safeErrorRedirectTo}${separator}error=${encodeURIComponent(
+        error.message,
+      )}`,
+    );
+  }
 
   redirect("/login?message=Check your email to confirm your account");
 }

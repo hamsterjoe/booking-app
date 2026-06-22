@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SignupNavLink } from "./SignupNavLink";
 
 const navLinks = [
   {
@@ -48,7 +49,7 @@ export async function Header() {
 
   return (
     <header className="pointer-events-none absolute left-0 top-0 z-50 w-full px-4 pt-5 sm:px-6 sm:pt-6">
-      <svg style={{ display: "none" }} aria-hidden="true">
+      <svg className="hidden" aria-hidden="true">
         <filter id="picko-glass-distortion">
           <feTurbulence
             type="turbulence"
@@ -84,9 +85,7 @@ export async function Header() {
             {user ? (
               <LogoutButton />
             ) : (
-              <Link href="/register" className="picko-signup-button">
-                Sign up
-              </Link>
+              <SignupNavLink />
             )}
           </nav>
         </div>
