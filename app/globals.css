@@ -20,3 +20,219 @@ body {
   background: rgba(190, 242, 100, 0.35);
   color: white;
 }
+
+.picko-hero-button {
+  --color-text: #ffffff;
+  --color-background: #3a8dfa;
+  --color-background-hover: #1662cc;
+  --color-outline: rgba(58, 141, 250, 0.3);
+  --color-shadow: rgba(58, 141, 250, 0.28);
+
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.95rem 1.55rem;
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  background: var(--color-background);
+  box-shadow:
+    0 0 0.25rem 0 var(--color-background),
+    0 0 2.25rem var(--color-shadow);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.5s ease,
+    background 0.5s ease;
+}
+
+.picko-hero-button:active {
+  transform: scale(0.96);
+}
+
+.picko-hero-button:hover {
+  outline: 0.1em solid transparent;
+  outline-offset: 0.2em;
+  box-shadow:
+    0 0 1rem 0 var(--color-background),
+    0 0 3rem rgba(58, 141, 250, 0.35);
+  animation:
+    pickoButtonRipple 1s linear infinite,
+    pickoButtonColorize 1s infinite;
+}
+
+@keyframes pickoButtonColorize {
+  0% {
+    background: var(--color-background);
+  }
+
+  50% {
+    background: var(--color-background-hover);
+  }
+
+  100% {
+    background: var(--color-background);
+  }
+}
+
+@keyframes pickoButtonRipple {
+  0% {
+    outline: 0 solid transparent;
+    outline-offset: -0.1em;
+  }
+
+  50% {
+    outline: 0.2em solid var(--color-outline);
+    outline-offset: 0.2em;
+  }
+
+  100% {
+    outline: 0.4em solid transparent;
+    outline-offset: 0.4em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .picko-hero-button,
+  .picko-hero-button:hover {
+    animation: none;
+    transition: none;
+  }
+}
+
+.glass-nav {
+  --glass-bg-color: rgba(12, 12, 14, 0.38);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-text: #ffffff;
+
+  position: relative;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: transparent;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-filter,
+.glass-overlay,
+.glass-specular {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.glass-filter {
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  filter: url("#picko-glass-distortion") saturate(135%) brightness(1.12);
+}
+
+.glass-overlay {
+  z-index: 2;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.13),
+      rgba(255, 255, 255, 0.04) 42%,
+      rgba(0, 0, 0, 0.2)
+    ),
+    var(--glass-bg-color);
+}
+
+.glass-specular {
+  z-index: 3;
+  pointer-events: none;
+  box-shadow:
+    inset 1px 1px 1px var(--glass-highlight),
+    inset -1px -1px 1px rgba(255, 255, 255, 0.04);
+}
+
+.glass-content {
+  position: relative;
+  z-index: 4;
+  padding: 1rem 1.25rem;
+}
+
+.glass-nav-item {
+  color: rgb(212, 212, 216);
+  text-decoration: none;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.7rem;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+
+.glass-nav-item:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
+}
+
+.picko-signup-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  padding: 0.65rem 1.15rem;
+  color: #09090b;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 10px 24px rgba(0, 0, 0, 0.28);
+  transition:
+    color 0.7s ease,
+    text-shadow 0.7s ease,
+    transform 0.25s ease,
+    box-shadow 0.7s ease;
+}
+
+.picko-signup-button::after {
+  content: "";
+  position: absolute;
+  left: 1.1rem;
+  bottom: 0;
+  z-index: -1;
+  height: 0.25rem;
+  width: 0.25rem;
+  border-radius: 0.55rem;
+  background: #e5e7eb;
+  transform: translateY(100%);
+  transition:
+    transform 0.7s ease,
+    scale 0.7s ease,
+    background-color 0.7s ease;
+}
+
+.picko-signup-button:hover {
+  color: #09090b;
+  text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 12px 30px rgba(255, 255, 255, 0.18);
+}
+
+.picko-signup-button:hover::after {
+  transform: translateY(0);
+  scale: 300;
+}
+
+.picko-signup-button:active {
+  transform: scale(0.96);
+}

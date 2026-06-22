@@ -48,37 +48,48 @@ export async function Header() {
 
   return (
     <header className="pointer-events-none absolute left-0 top-0 z-50 w-full px-4 pt-5 sm:px-6 sm:pt-6">
-      <div className="pointer-events-auto mx-auto flex max-w-6xl flex-col gap-4 rounded-2xl bg-zinc-950/75 px-5 py-4 shadow-2xl shadow-black/40 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-        <Link href={logoHref} className="flex items-center">
-          <img
-            src="/images/picko-logo.png"
-            alt="Picko"
-            className="h-9 w-auto object-contain"
+      <svg style={{ display: "none" }} aria-hidden="true">
+        <filter id="picko-glass-distortion">
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.008"
+            numOctaves="2"
+            result="noise"
           />
-        </Link>
-  
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm font-medium text-zinc-400">
-          {visibleNavLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="transition hover:text-white"
-            >
-              {link.label}
-            </Link>
-          ))}
-  
-          {user ? (
-            <LogoutButton />
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-xl bg-white px-4 py-2 font-semibold text-zinc-950 shadow-sm transition hover:bg-zinc-200"
-            >
-              Log in / Sign up
-            </Link>
-          )}
-        </nav>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="38" />
+        </filter>
+      </svg>
+
+      <div className="glass-nav pointer-events-auto mx-auto max-w-6xl">
+        <div className="glass-filter" />
+        <div className="glass-overlay" />
+        <div className="glass-specular" />
+
+        <div className="glass-content flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Link href={logoHref} className="flex items-center">
+            <img
+              src="/images/picko-logo.png"
+              alt="Picko"
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
+
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm font-medium text-zinc-300">
+            {visibleNavLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="glass-nav-item">
+                {link.label}
+              </Link>
+            ))}
+
+            {user ? (
+              <LogoutButton />
+            ) : (
+              <Link href="/register" className="picko-signup-button">
+                Sign up
+              </Link>
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   );
