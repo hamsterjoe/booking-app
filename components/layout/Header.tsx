@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LoginNavLink } from "./LoginNavLink";
+import { ProfileDropdown } from "./ProfileDropdown";
 
 const navLinks = [
   {
@@ -9,8 +9,8 @@ const navLinks = [
     href: "/",
   },
   {
-    label: "Courts",
-    href: "/courts",
+    label: "Book",
+    href: "/bookings/new",
   },
   {
     label: "My Bookings",
@@ -30,20 +30,18 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   let isAdmin = false;
+  let profileName: string | null = null;
 
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, full_name")
       .eq("id", user.id)
       .single();
 
     isAdmin = profile?.role === "admin";
+    profileName = profile?.full_name ?? null;
   }
-
-  const visibleNavLinks = isAdmin
-    ? [...navLinks, { label: "Admin", href: "/admin" }]
-    : navLinks;
 
   const logoHref = user ? "/dashboard" : "/";
 
@@ -75,14 +73,24 @@ export async function Header() {
             />
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm font-medium text-zinc-300">
-            {visibleNavLinks.map((link) => (
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm font-medium text-zinc-300">
+            {navLinks.map((link) => (
               <Link key={link.href} href={link.href} className="glass-nav-item">
                 {link.label}
               </Link>
             ))}
 
-            {user ? <LogoutButton /> : <LoginNavLink />}
+            {isAdmin ? (
+              <Link href="/admin" className="picko-nav-cta">
+                Admin
+              </Link>
+            ) : null}
+
+            {user ? (
+              <ProfileDropdown name={profileName} email={user.email} />
+            ) : (
+              <LoginNavLink />
+            )}
           </nav>
         </div>
       </div>

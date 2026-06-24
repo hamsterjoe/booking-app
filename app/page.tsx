@@ -36,15 +36,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           <p className="mb-5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100 shadow-2xl backdrop-blur-md">
-            Picko by TJY
+            Picko Pickleball
           </p>
 
           <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Picko Pickleball
+            Your next game starts here.
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-200 sm:text-lg">
-            Book your next pickleball court in seconds from your streamlined booking site preferred by thousands nationwide.
+            Book your next pickleball court in seconds from your streamlined booking site preferred by thousands nationwide. Never miss a match again.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">

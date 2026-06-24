@@ -9,7 +9,7 @@ export function LoginNavLink() {
   const href = pathname === "/" ? "/?auth=login" : "/login";
 
   return (
-    <Link href={href} className="picko-signup-button">
+    <Link href={href} className="picko-nav-cta">
       Log in
     </Link>
   );
