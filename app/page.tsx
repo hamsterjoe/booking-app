@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RegisterModal } from "@/components/auth/RegisterModal";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 type HomePageProps = {
   searchParams: Promise<{
@@ -12,6 +13,7 @@ type HomePageProps = {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const shouldShowSignupModal = params.auth === "signup";
+  const shouldShowLoginModal = params.auth === "login";
 
   return (
     <>
@@ -62,6 +64,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {shouldShowSignupModal ? (
         <RegisterModal error={params.error} message={params.message} />
+      ) : null}
+
+      {shouldShowLoginModal ? (
+        <LoginModal error={params.error} message={params.message} />
       ) : null}
     </>
   );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SignupNavLink } from "./SignupNavLink";
+import { LoginNavLink } from "./LoginNavLink";
 
 const navLinks = [
   {
@@ -82,11 +82,7 @@ export async function Header() {
               </Link>
             ))}
 
-            {user ? (
-              <LogoutButton />
-            ) : (
-              <SignupNavLink />
-            )}
+            {user ? <LogoutButton /> : <LoginNavLink />}
           </nav>
         </div>
       </div>

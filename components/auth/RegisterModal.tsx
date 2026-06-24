@@ -24,7 +24,7 @@ export function RegisterModal({ error, message }: RegisterModalProps) {
                 <Link
                     href="/"
                     aria-label="Close sign up modal"
-                    className="absolute right-3 -top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-950/90 text-lg font-semibold leading-none text-white shadow-xl shadow-black/40 backdrop-blur transition hover:bg-white hover:text-zinc-950"                >
+                    className="absolute right-3 -top-8 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-950/90 text-lg font-semibold leading-none text-white shadow-xl shadow-black/40 backdrop-blur transition hover:bg-white hover:text-zinc-950"                >
                     ×
                 </Link>
 
@@ -36,6 +36,7 @@ export function RegisterModal({ error, message }: RegisterModalProps) {
                     error={error}
                     message={message}
                     errorRedirectTo="/?auth=signup"
+                    loginHref="/?auth=login"
                 />
             </div>
         </div>

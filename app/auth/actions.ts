@@ -36,6 +36,10 @@ export async function register(formData: FormData) {
 export async function login(formData: FormData) {
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
+  const errorRedirectTo = String(formData.get("errorRedirectTo") ?? "/login");
+
+  const safeErrorRedirectTo =
+    errorRedirectTo === "/?auth=login" ? "/?auth=login" : "/login";
 
   const supabase = await createSupabaseServerClient();
 
@@ -45,7 +49,9 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    redirect("/login?error=Invalid email or password");
+    const separator = safeErrorRedirectTo.includes("?") ? "&" : "?";
+
+    redirect(`${safeErrorRedirectTo}${separator}error=Invalid email or password`);
   }
 
   redirect("/dashboard");
