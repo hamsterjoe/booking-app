@@ -14,7 +14,6 @@ type ConfirmBookingPageProps = {
 type Court = {
     id: string;
     name: string;
-    location_label: string | null;
     is_indoor: boolean;
     price_per_hour_cents: number;
 };
@@ -147,7 +146,6 @@ export default async function ConfirmBookingPage({
         courts!inner (
           id,
           name,
-          location_label,
           is_indoor,
           price_per_hour_cents
         )
@@ -182,89 +180,172 @@ export default async function ConfirmBookingPage({
     }
 
     return (
-        <section className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-12">
-            <div>
-                <Link
-                    href={`/bookings/new?date=${date}`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                    ← Back to available times
-                </Link>
+        <section className="min-h-screen bg-black px-6 pb-16 pt-36 text-white">
+            <div className="mx-auto flex max-w-6xl flex-col gap-8">
+                <div>
+                    <Link
+                        href={`/bookings/new?date=${date}`}
+                        className="inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
+                    >
+                        ← Back to available slots
+                    </Link>
+                </div>
 
-                <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-blue-600">
-                    Confirm booking
-                </p>
+                <div className="text-center">
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">
+                        Confirm booking
+                    </p>
 
-                <h1 className="mt-2 text-3xl font-bold text-slate-950">
-                    Review your court booking
-                </h1>
+                    <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                        {court.name}
+                    </h1>
 
-                <p className="mt-3 max-w-2xl text-slate-600">
-                    Check the details below before confirming your Picko court
-                    booking.
-                </p>
-            </div>
+                    <p className="mt-3 text-sm text-zinc-400">
+                        Picko court · {court.is_indoor ? "Indoor" : "Outdoor"}
+                    </p>
+                </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-slate-950">
-                    Booking details
-                </h2>
-
-                <div className="mt-6 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
-                    <div>
-                        <p className="font-medium text-slate-900">Date</p>
-                        <p>{formatSlotDate(slot.start_time)}</p>
-                    </div>
-
-                    <div>
-                        <p className="font-medium text-slate-900">Time</p>
-                        <p>
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl shadow-black/40">
+                    <div className="flex items-center justify-center gap-3 bg-zinc-100 px-6 py-5 text-sm font-bold text-zinc-900">
+                        <span aria-hidden="true">📅</span>
+                        <span>
+                            {formatSlotDate(slot.start_time)} ·{" "}
                             {formatSlotTime(slot.start_time)} -{" "}
                             {formatSlotTime(slot.end_time)}
-                        </p>
+                        </span>
                     </div>
 
-                    <div>
-                        <p className="font-medium text-slate-900">Court</p>
-                        <p>{court.name}</p>
-                    </div>
+                    <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+                        <div className="border-b border-zinc-200 p-6 lg:border-b-0 lg:border-r lg:p-8">
+                            <h2 className="text-lg font-bold text-zinc-950">
+                                Booking details
+                            </h2>
 
-                    <div>
-                        <p className="font-medium text-slate-900">Location</p>
-                        <p>{court.location_label ?? "Picko"}</p>
-                    </div>
+                            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                                <div className="rounded-2xl bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                        Date
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                        {formatSlotDate(slot.start_time)}
+                                    </p>
+                                </div>
 
-                    <div>
-                        <p className="font-medium text-slate-900">Court type</p>
-                        <p>{court.is_indoor ? "Indoor" : "Outdoor"}</p>
-                    </div>
+                                <div className="rounded-2xl bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                        Time
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                        {formatSlotTime(slot.start_time)} -{" "}
+                                        {formatSlotTime(slot.end_time)}
+                                    </p>
+                                </div>
 
-                    <div>
-                        <p className="font-medium text-slate-900">Price</p>
-                        <p>{formatPrice(court.price_per_hour_cents)}</p>
+                                <div className="rounded-2xl bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                        Court
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                        {court.name}
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                        Court type
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                        {court.is_indoor ? "Indoor" : "Outdoor"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                                <div className="flex items-start gap-3">
+                                    <span aria-hidden="true">ℹ️</span>
+                                    <p>
+                                        Your court is reserved only after you confirm this booking.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 lg:p-8">
+                            <div className="flex items-center justify-between gap-4">
+                                <h2 className="text-lg font-bold text-zinc-950">
+                                    Billing summary
+                                </h2>
+
+                                <div className="group relative">
+                                    <button
+                                        type="button"
+                                        className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-500"
+                                        aria-label="Booking confirmation information"
+                                    >
+                                        ?
+                                    </button>
+
+                                    <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-20 w-64 rounded-xl bg-zinc-950 px-4 py-3 text-left text-xs leading-5 text-zinc-200 opacity-0 shadow-xl transition group-hover:opacity-100">
+                                        Review your selected court and time before confirming.
+                                        You can go back to choose another slot if needed.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 space-y-3 text-sm">
+                                <div className="flex items-center justify-between text-zinc-600">
+                                    <span>{court.name}</span>
+                                    <span>{formatPrice(court.price_per_hour_cents)}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-zinc-600">
+                                    <span>Duration</span>
+                                    <span>1 hour</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-zinc-600">
+                                    <span>Discount</span>
+                                    <span>RM 0.00</span>
+                                </div>
+
+                                <div className="border-t border-zinc-200 pt-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-base font-bold text-zinc-950">
+                                            Total billing
+                                        </span>
+                                        <span className="text-xl font-bold text-zinc-950">
+                                            {formatPrice(court.price_per_hour_cents)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
+                                You can cancel eligible bookings later from your booking
+                                details page.
+                            </div>
+
+                            <form action={createBooking} className="mt-6">
+                                <input type="hidden" name="slotId" value={slot.id} />
+                                <input type="hidden" name="date" value={date} />
+
+                                <SubmitButton
+                                    pendingText="Confirming..."
+                                    className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:bg-blue-300"
+                                >
+                                    Confirm booking ({formatPrice(court.price_per_hour_cents)})
+                                </SubmitButton>
+                            </form>
+
+                            <Link
+                                href={`/bookings/new?date=${date}`}
+                                className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100"
+                            >
+                                Choose another slot
+                            </Link>
+                        </div>
                     </div>
                 </div>
-
-                <div className="mt-6 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
-                    Your booking is not created yet. Click confirm below to
-                    reserve this court.
-                </div>
-
-                <form action={createBooking} className="mt-6">
-                    <input type="hidden" name="slotId" value={slot.id} />
-                    <input type="hidden" name="date" value={date} />
-
-                    <SubmitButton pendingText="Confirming..." className="w-full">
-                        Confirm booking
-                    </SubmitButton>
-                </form>
-
-                <Link
-                    href={`/bookings/new?date=${date}`}
-                    className="mt-3 block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                    Choose another slot
-                </Link>
             </div>
         </section>
     );
