@@ -158,17 +158,17 @@ function getStatusLabel(booking: Booking) {
 function getStatusTheme(category: Exclude<BookingFilter, "all">) {
     if (category === "upcoming") {
         return {
-            card: "border-l-4 border-l-emerald-400",
-            pill: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
-            dot: "bg-emerald-400",
+            card: "border-l-4 border-l-lime-400",
+            pill: "bg-lime-400/25 text-lime-800 ring-1 ring-lime-400/50",
+            dot: "bg-lime-400",
         };
     }
 
     if (category === "completed") {
         return {
-            card: "border-l-4 border-l-blue-400",
-            pill: "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/20",
-            dot: "bg-blue-400",
+            card: "border-l-4 border-l-sky-400",
+            pill: "bg-sky-400/25 text-sky-800 ring-1 ring-sky-400/50",
+            dot: "bg-sky-400",
         };
     }
 
@@ -270,7 +270,7 @@ function BookingCard({
 
     if (!slot || !court) {
         return (
-            <article className="rounded-2xl border border-white/10 bg-white/90 p-5 text-zinc-600 shadow-xl shadow-black/20 backdrop-blur-2xl">
+            <article className="rounded-2xl border border-white/20 bg-white/95 p-5 text-zinc-600 shadow-xl shadow-black/20 backdrop-blur-2xl">
                 Booking details are unavailable.
             </article>
         );
@@ -278,7 +278,7 @@ function BookingCard({
 
     return (
         <article
-            className={`rounded-2xl border border-white/20 bg-white/90 p-5 shadow-xl shadow-black/20 backdrop-blur-2xl ${theme.card}`}
+            className={`rounded-2xl border border-white/30 bg-white/95 p-5 shadow-xl shadow-black/20 backdrop-blur-2xl ${theme.card}`}
         >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -325,7 +325,7 @@ function BookingCard({
                             <SubmitButton
                                 pendingText="Cancelling..."
                                 variant="danger"
-                                className="w-full rounded-xl px-4 py-2.5 text-sm"
+                                className="w-full rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:border-red-200 disabled:bg-red-50 disabled:text-red-300"
                             >
                                 Cancel
                             </SubmitButton>
@@ -531,9 +531,9 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
 
                 <nav
                     aria-label="Booking filters"
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.07] p-1 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:w-fit"
+                    className="mx-auto w-full max-w-2xl rounded-2xl border border-white/10 bg-white/[0.08] p-1 shadow-2xl shadow-black/20 backdrop-blur-2xl"
                 >
-                    <div className="grid grid-cols-2 gap-1 sm:flex">
+                    <div className="grid grid-cols-4 gap-1">
                         {bookingFilters.map((filter) => {
                             const isActive = selectedFilter === filter;
                             const href =
@@ -545,7 +545,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                                 <Link
                                     key={filter}
                                     href={href}
-                                    className={`rounded-xl px-4 py-2.5 text-center text-sm font-bold transition ${isActive
+                                    className={`rounded-xl px-2 py-2.5 text-center text-xs font-bold transition sm:px-4 sm:text-sm ${isActive
                                         ? "bg-white text-zinc-950 shadow-lg shadow-black/20"
                                         : "text-zinc-400 hover:bg-white/10 hover:text-white"
                                         }`}
