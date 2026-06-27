@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createBooking } from "@/app/bookings/actions";
+import { DiscountCodeToggle } from "@/components/bookings/DiscountCodeToggle";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -196,8 +197,15 @@ export default async function ConfirmBookingPage({
                         Confirm booking
                     </p>
 
-                    <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                        {court.name}
+                    <h1 className="mt-3 flex items-center justify-center gap-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                        <img
+                            src="/assets/icons/court.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="h-8 w-8 sm:h-10 sm:w-10"
+                        />
+
+                        <span>{court.name}</span>
                     </h1>
 
                     <p className="mt-3 text-sm text-zinc-400">
@@ -205,9 +213,15 @@ export default async function ConfirmBookingPage({
                     </p>
                 </div>
 
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl shadow-black/40">
-                    <div className="flex items-center justify-center gap-3 bg-zinc-100 px-6 py-5 text-sm font-bold text-zinc-900">
-                        <span aria-hidden="true">📅</span>
+                <div className="overflow-hidden rounded-3xl border border-white/20 bg-white/90 shadow-2xl shadow-black/40 backdrop-blur-2xl">
+                    <div className="flex items-center justify-center gap-3 bg-zinc-100/80 px-6 py-5 text-sm font-bold text-zinc-900 backdrop-blur">
+                        <img
+                            src="/assets/icons/calendar-confirmed.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="h-5 w-5"
+                        />
+
                         <span>
                             {formatSlotDate(slot.start_time)} ·{" "}
                             {formatSlotTime(slot.start_time)} -{" "}
@@ -260,10 +274,16 @@ export default async function ConfirmBookingPage({
                                 </div>
                             </div>
 
-                            <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
-                                <div className="flex items-start gap-3">
-                                    <span aria-hidden="true">ℹ️</span>
-                                    <p>
+                            <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/90 p-4 text-sm text-sky-900">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src="/assets/icons/info.svg"
+                                        alt=""
+                                        aria-hidden="true"
+                                        className="h-5 w-5 shrink-0 text-sky-900"
+                                    />
+
+                                    <p className="leading-6">
                                         Your court is reserved only after you confirm this booking.
                                     </p>
                                 </div>
@@ -272,9 +292,18 @@ export default async function ConfirmBookingPage({
 
                         <div className="p-6 lg:p-8">
                             <div className="flex items-center justify-between gap-4">
-                                <h2 className="text-lg font-bold text-zinc-950">
-                                    Billing summary
-                                </h2>
+                                <div className="flex items-center gap-2">
+                                    <img
+                                        src="/assets/icons/billing.svg"
+                                        alt=""
+                                        aria-hidden="true"
+                                        className="h-5 w-5"
+                                    />
+
+                                    <h2 className="text-lg font-bold text-zinc-950">
+                                        Billing summary
+                                    </h2>
+                                </div>
 
                                 <div className="group relative">
                                     <button
@@ -317,12 +346,13 @@ export default async function ConfirmBookingPage({
                                             {formatPrice(court.price_per_hour_cents)}
                                         </span>
                                     </div>
+
+                                    <DiscountCodeToggle />
                                 </div>
                             </div>
 
                             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                                You can cancel eligible bookings later from your booking
-                                details page.
+                                You can cancel bookings later from your booking details page.
                             </div>
 
                             <form action={createBooking} className="mt-6">

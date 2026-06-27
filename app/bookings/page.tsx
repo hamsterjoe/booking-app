@@ -7,7 +7,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 type Court = {
     id: string;
     name: string;
-    location_label: string | null;
     is_indoor: boolean;
 };
 
@@ -51,10 +50,18 @@ const bookingFilters: BookingFilter[] = [
     "cancelled",
 ];
 
-function isValidBookingFilter(
-    filter: string | undefined,
-): filter is BookingFilter {
-    return bookingFilters.includes((filter ?? "all") as BookingFilter);
+const bookingFilterLabels: Record<BookingFilter, string> = {
+    upcoming: "Upcoming",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    all: "All",
+};
+
+function getSelectedBookingFilter(filter: string | undefined): BookingFilter {
+    if (bookingFilters.includes(filter as BookingFilter)) {
+        return filter as BookingFilter;
+    }
+    return "upcoming";
 }
 
 function formatPrice(cents: number) {
@@ -116,20 +123,60 @@ function formatBookingTime(dateTime: string) {
     }).format(new Date(dateTime));
 }
 
-function getStatusClasses(status: Booking["status"]) {
-    if (status === "confirmed") {
-        return "bg-green-50 text-green-700";
+function getBookingCategory(booking: Booking): Exclude<BookingFilter, "all"> {
+    const effectiveStatus = getEffectiveBookingStatus(booking);
+
+    if (effectiveStatus === "cancelled") {
+        return "cancelled";
     }
 
-    if (status === "pending") {
-        return "bg-yellow-50 text-yellow-700";
+    if (effectiveStatus === "completed") {
+        return "completed";
     }
 
-    if (status === "cancelled") {
-        return "bg-red-50 text-red-700";
+    return "upcoming";
+}
+
+function getStatusLabel(booking: Booking) {
+    const effectiveStatus = getEffectiveBookingStatus(booking);
+
+    if (effectiveStatus === "confirmed") {
+        return "Upcoming";
     }
 
-    return "bg-slate-100 text-slate-700";
+    if (effectiveStatus === "pending") {
+        return "Pending";
+    }
+
+    if (effectiveStatus === "completed") {
+        return "Completed";
+    }
+
+    return "Cancelled";
+}
+
+function getStatusTheme(category: Exclude<BookingFilter, "all">) {
+    if (category === "upcoming") {
+        return {
+            card: "border-l-4 border-l-emerald-400",
+            pill: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20",
+            dot: "bg-emerald-400",
+        };
+    }
+
+    if (category === "completed") {
+        return {
+            card: "border-l-4 border-l-blue-400",
+            pill: "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/20",
+            dot: "bg-blue-400",
+        };
+    }
+
+    return {
+        card: "border-l-4 border-l-red-400",
+        pill: "bg-red-500/10 text-red-700 ring-1 ring-red-500/20",
+        dot: "bg-red-400",
+    };
 }
 
 function getEffectiveBookingStatus(booking: Booking): BookingStatus {
@@ -218,87 +265,74 @@ function BookingCard({
 }) {
     const slot = booking.court_slots;
     const court = slot?.courts;
-    const effectiveStatus = getEffectiveBookingStatus(booking);
+    const category = getBookingCategory(booking);
+    const theme = getStatusTheme(category);
 
     if (!slot || !court) {
         return (
-            <article className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+            <article className="rounded-2xl border border-white/10 bg-white/90 p-5 text-zinc-600 shadow-xl shadow-black/20 backdrop-blur-2xl">
                 Booking details are unavailable.
             </article>
         );
     }
 
     return (
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+        <article
+            className={`rounded-2xl border border-white/20 bg-white/90 p-5 shadow-xl shadow-black/20 backdrop-blur-2xl ${theme.card}`}
+        >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${theme.dot}`} />
+
+                        <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${theme.pill}`}
+                        >
+                            {getStatusLabel(booking)}
+                        </span>
+
+                        <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-white">
+                            {formatPrice(booking.total_price_cents)}
+                        </span>
+                    </div>
+
+                    <h3 className="mt-3 truncate text-lg font-bold text-zinc-950">
+                        {court.name}
+                    </h3>
+
+                    <p className="mt-1 text-sm font-medium text-zinc-600">
                         {formatBookingDate(slot.start_time)}
                     </p>
 
-                    <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                    <p className="mt-1 text-sm text-zinc-500">
                         {formatBookingTime(slot.start_time)} -{" "}
-                        {formatBookingTime(slot.end_time)}
-                    </h3>
-                </div>
-
-                <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                        effectiveStatus,
-                    )}`}
-                >
-                    {effectiveStatus}
-                </span>
-            </div>
-
-            <div className="mt-5 grid gap-4 text-sm text-slate-600 sm:grid-cols-2">
-                <div>
-                    <p className="font-medium text-slate-900">Court</p>
-                    <p>{court.name}</p>
-                </div>
-
-                <div>
-                    <p className="font-medium text-slate-900">Location</p>
-                    <p>{court.location_label ?? "Picko"}</p>
-                </div>
-
-                <div>
-                    <p className="font-medium text-slate-900">Court type</p>
-                    <p>{court.is_indoor ? "Indoor" : "Outdoor"}</p>
-                </div>
-
-                <div>
-                    <p className="font-medium text-slate-900">Price</p>
-                    <p>{formatPrice(booking.total_price_cents)}</p>
-                </div>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3">
-                <Link
-                    href={`/bookings/${booking.id}?returnTo=${encodeURIComponent(returnTo)}`}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                    View details
-                </Link>
-
-                {canCancelBooking(booking) ? (
-                    <form action={cancelBooking}>
-                        <input type="hidden" name="bookingId" value={booking.id} />
-                        <SubmitButton
-                            pendingText="Cancelling..."
-                            variant="danger"
-                            className="w-full"
-                        >
-                            Cancel booking
-                        </SubmitButton>
-                    </form>
-                ) : isWithinCancellationCutoff(booking) ? (
-                    <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        This booking can no longer be cancelled because it starts within 6 hours.
+                        {formatBookingTime(slot.end_time)} ·{" "}
+                        {court.is_indoor ? "Indoor" : "Outdoor"}
                     </p>
-                ) : null}
-            </div>
+                </div>
 
+                <div className="flex shrink-0 flex-col gap-2 sm:w-40">
+                    <Link
+                        href={`/bookings/${booking.id}?returnTo=${encodeURIComponent(returnTo)}`}
+                        className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800"
+                    >
+                        View details
+                    </Link>
+
+                    {canCancelBooking(booking) ? (
+                        <form action={cancelBooking}>
+                            <input type="hidden" name="bookingId" value={booking.id} />
+                            <SubmitButton
+                                pendingText="Cancelling..."
+                                variant="danger"
+                                className="w-full rounded-xl px-4 py-2.5 text-sm"
+                            >
+                                Cancel
+                            </SubmitButton>
+                        </form>
+                    ) : null}
+                </div>
+            </div>
         </article>
     );
 }
@@ -318,13 +352,13 @@ function BookingGroupList({
 }) {
     if (groups.length === 0) {
         return (
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-                <p>{emptyText}</p>
+            <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.07] p-6 text-zinc-300 shadow-2xl shadow-black/20 backdrop-blur-2xl">
+                <p className="text-sm">{emptyText}</p>
 
                 {actionHref && actionLabel ? (
                     <Link
                         href={actionHref}
-                        className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="mt-4 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-zinc-950 transition hover:bg-zinc-200"
                     >
                         {actionLabel}
                     </Link>
@@ -334,20 +368,21 @@ function BookingGroupList({
     }
 
     return (
-        <div className="mt-6 grid gap-6">
+        <div className="mt-5 grid gap-6">
             {groups.map((group) => (
                 <section key={group.dateKey}>
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                        <h3 className="text-lg font-semibold text-slate-950">
+                        <h3 className="text-lg font-bold text-white">
                             {group.dateLabel}
                         </h3>
-                        <p className="text-sm text-slate-500">
+
+                        <p className="text-sm text-zinc-500">
                             {group.bookings.length}{" "}
                             {group.bookings.length === 1 ? "booking" : "bookings"}
                         </p>
                     </div>
 
-                    <div className="mt-3 grid gap-4">
+                    <div className="mt-3 grid gap-3">
                         {group.bookings.map((booking) => (
                             <BookingCard
                                 key={booking.id}
@@ -364,12 +399,10 @@ function BookingGroupList({
 
 export default async function BookingsPage({ searchParams }: BookingsPageProps) {
     const params = await searchParams;
-    const selectedFilter = isValidBookingFilter(params.filter)
-        ? params.filter ?? "all"
-        : "all";
+    const selectedFilter = getSelectedBookingFilter(params.filter);
 
     const returnTo =
-        selectedFilter === "all"
+        selectedFilter === "upcoming"
             ? "/bookings"
             : `/bookings?filter=${selectedFilter}`;
 
@@ -383,28 +416,32 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
         redirect("/login?error=Please log in to view your bookings");
     }
 
+    const historyStartDate = new Date();
+    historyStartDate.setDate(historyStartDate.getDate() - 90);
+    const historyStartIso = historyStartDate.toISOString();
+
     const { data, error } = await supabase
         .from("bookings")
         .select(
             `
+    id,
+    status,
+    total_price_cents,
+    created_at,
+    court_slots!inner (
+      id,
+      start_time,
+      end_time,
+      courts (
         id,
-        status,
-        total_price_cents,
-        created_at,
-        court_slots (
-          id,
-          start_time,
-          end_time,
-          courts (
-            id,
-            name,
-            location_label,
-            is_indoor
-          )
+        name,
+        is_indoor
+      )
+    )
+  `,
         )
-      `,
-        )
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .gte("court_slots.start_time", historyStartIso);
 
     const bookings = sortBookingsByStartTime((data ?? []) as unknown as Booking[]);
     const now = new Date();
@@ -424,21 +461,6 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
         );
     });
 
-    const pastBookings = bookings.filter((booking) => {
-        const startTime = booking.court_slots?.start_time;
-        const effectiveStatus = getEffectiveBookingStatus(booking);
-
-        if (!startTime) {
-            return true;
-        }
-
-        return (
-            new Date(startTime) < now ||
-            effectiveStatus === "cancelled" ||
-            effectiveStatus === "completed"
-        );
-    });
-
     const completedBookings = bookings.filter(
         (booking) => getEffectiveBookingStatus(booking) === "completed",
     );
@@ -448,111 +470,139 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
     );
 
     const upcomingBookingGroups = groupBookingsByDate(upcomingBookings);
-    const pastBookingGroups = groupBookingsByDate(pastBookings);
     const completedBookingGroups = groupBookingsByDate(completedBookings);
     const cancelledBookingGroups = groupBookingsByDate(cancelledBookings);
 
     if (error) {
         return (
-            <section className="mx-auto max-w-6xl px-6 py-12">
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
-                    <h1 className="text-xl font-semibold">Could not load bookings</h1>
-                    <p className="mt-2 text-sm">{error.message}</p>
+            <section className="min-h-screen bg-black px-6 pb-16 pt-36 text-white">
+                <div className="mx-auto max-w-6xl">
+                    <div className="rounded-3xl border border-red-400/20 bg-red-500/10 p-6 text-red-100">
+                        <h1 className="text-xl font-bold">Could not load bookings</h1>
+                        <p className="mt-2 text-sm text-red-200/90">{error.message}</p>
+                    </div>
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12">
-
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
-                Cancellations are allowed up to 6 hours before your court time.
-            </div>
-
-            {params.message ? (
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                    {params.message}
-                </div>
-            ) : null}
-
-            {params.error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {params.error}
-                </div>
-            ) : null}
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                        My bookings
-                    </p>
-
-                    <h1 className="mt-2 text-3xl font-bold text-slate-950">
-                        Your Picko court bookings
-                    </h1>
-
-                    <p className="mt-3 max-w-2xl text-slate-600">
-                        View your upcoming court bookings and booking history.
-                    </p>
+        <section className="min-h-screen bg-black px-6 pb-16 pt-36 text-white">
+            <div className="mx-auto flex max-w-6xl flex-col gap-8">
+                <div className="rounded-3xl border border-sky-400/20 bg-sky-500/10 p-4 text-sm text-sky-100">
+                    Cancellations are allowed up to 6 hours before your court time.
                 </div>
 
-                <Link
-                    href="/bookings/new"
-                    className="rounded-lg bg-blue-600 px-5 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                    Book another court
-                </Link>
-            </div>
+                {params.message ? (
+                    <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                        {params.message}
+                    </div>
+                ) : null}
 
-            <form
-                key={selectedFilter}
-                action="/bookings"
-                method="get"
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
-                <label
-                    htmlFor="filter"
-                    className="text-sm font-medium text-slate-700"
-                >
-                    Filter bookings
-                </label>
+                {params.error ? (
+                    <div className="rounded-3xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+                        {params.error}
+                    </div>
+                ) : null}
 
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                    <select
-                        id="filter"
-                        name="filter"
-                        defaultValue={selectedFilter}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 sm:max-w-xs"
-                    >
-                        <option value="all">All bookings</option>
-                        <option value="upcoming">Upcoming</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">
+                            My bookings
+                        </p>
 
-                    <button
-                        type="submit"
-                        className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                    >
-                        Apply filter
-                    </button>
+                        <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                            Your Picko bookings
+                        </h1>
+
+                        <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
+                            View upcoming sessions and recent booking history from the last
+                            90 days.
+                        </p>
+                    </div>
 
                     <Link
-                        href="/bookings"
-                        className="rounded-lg border border-slate-300 px-5 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        href="/bookings/new"
+                        className="h-fit rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-zinc-950 transition hover:bg-zinc-200"
                     >
-                        Reset
+                        Book another court
                     </Link>
                 </div>
-            </form>
 
-            {selectedFilter === "all" ? (
-                <>
+                <nav
+                    aria-label="Booking filters"
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.07] p-1 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:w-fit"
+                >
+                    <div className="grid grid-cols-2 gap-1 sm:flex">
+                        {bookingFilters.map((filter) => {
+                            const isActive = selectedFilter === filter;
+                            const href =
+                                filter === "upcoming"
+                                    ? "/bookings"
+                                    : `/bookings?filter=${filter}`;
+
+                            return (
+                                <Link
+                                    key={filter}
+                                    href={href}
+                                    className={`rounded-xl px-4 py-2.5 text-center text-sm font-bold transition ${isActive
+                                        ? "bg-white text-zinc-950 shadow-lg shadow-black/20"
+                                        : "text-zinc-400 hover:bg-white/10 hover:text-white"
+                                        }`}
+                                >
+                                    {bookingFilterLabels[filter]}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </nav>
+
+                {selectedFilter === "all" ? (
+                    <div className="grid gap-10">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">
+                                Upcoming
+                            </h2>
+
+                            <BookingGroupList
+                                groups={upcomingBookingGroups}
+                                emptyText="You do not have any upcoming bookings."
+                                returnTo={returnTo}
+                                actionHref="/bookings/new"
+                                actionLabel="Book a court"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">
+                                Completed
+                            </h2>
+
+                            <BookingGroupList
+                                groups={completedBookingGroups}
+                                emptyText="You do not have any completed bookings from the last 90 days."
+                                returnTo={returnTo}
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">
+                                Cancelled
+                            </h2>
+
+                            <BookingGroupList
+                                groups={cancelledBookingGroups}
+                                emptyText="You do not have any cancelled bookings from the last 90 days."
+                                returnTo={returnTo}
+                            />
+                        </div>
+                    </div>
+                ) : selectedFilter === "upcoming" ? (
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-950">
-                            Upcoming bookings
+                        <h2 className="text-2xl font-bold text-white">
+                            Upcoming
                         </h2>
+
                         <BookingGroupList
                             groups={upcomingBookingGroups}
                             emptyText="You do not have any upcoming bookings."
@@ -560,62 +610,37 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                             actionHref="/bookings/new"
                             actionLabel="Book a court"
                         />
-
                     </div>
-
+                ) : selectedFilter === "completed" ? (
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-950">
-                            Booking history
+                        <h2 className="text-2xl font-bold text-white">
+                            Completed
                         </h2>
+
                         <BookingGroupList
-                            groups={pastBookingGroups}
-                            emptyText="Your completed and cancelled bookings will appear here once you make a booking."
+                            groups={completedBookingGroups}
+                            emptyText="You do not have any completed bookings from the last 90 days."
                             returnTo={returnTo}
                             actionHref="/bookings/new"
                             actionLabel="Book a court"
                         />
                     </div>
-                </>
-            ) : selectedFilter === "upcoming" ? (
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-950">
-                        Upcoming bookings
-                    </h2>
-                    <BookingGroupList
-                        groups={upcomingBookingGroups}
-                        emptyText="You do not have any upcoming bookings."
-                        returnTo={returnTo}
-                        actionHref="/bookings/new"
-                        actionLabel="Book a court"
-                    />
-                </div>
-            ) : selectedFilter === "completed" ? (
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-950">
-                        Completed bookings
-                    </h2>
-                    <BookingGroupList
-                        groups={completedBookingGroups}
-                        emptyText="You do not have any completed bookings."
-                        returnTo={returnTo}
-                        actionHref="/bookings/new"
-                        actionLabel="Book a court"
-                    />
-                </div>
-            ) : (
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-950">
-                        Cancelled bookings
-                    </h2>
-                    <BookingGroupList
-                        groups={cancelledBookingGroups}
-                        emptyText="You do not have any cancelled bookings."
-                        returnTo={returnTo}
-                        actionHref="/bookings/new"
-                        actionLabel="Book a court"
-                    />
-                </div>
-            )}
+                ) : (
+                    <div>
+                        <h2 className="text-2xl font-bold text-white">
+                            Cancelled
+                        </h2>
+
+                        <BookingGroupList
+                            groups={cancelledBookingGroups}
+                            emptyText="You do not have any cancelled bookings from the last 90 days."
+                            returnTo={returnTo}
+                            actionHref="/bookings/new"
+                            actionLabel="Book a court"
+                        />
+                    </div>
+                )}
+            </div>
         </section>
     );
 }
