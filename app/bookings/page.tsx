@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cancelBooking } from "@/app/bookings/actions";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { ToastMessage } from "@/components/ui/ToastMessage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Court = {
@@ -489,27 +490,29 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
     return (
         <section className="min-h-screen bg-black px-6 pb-16 pt-36 text-white">
             <div className="mx-auto flex max-w-6xl flex-col gap-8">
-                <div className="rounded-3xl border border-sky-400/20 bg-sky-500/10 p-4 text-sm text-sky-100">
-                    Cancellations are allowed up to 6 hours before your court time.
-                </div>
-
-                {params.message ? (
-                    <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-                        {params.message}
-                    </div>
-                ) : null}
-
-                {params.error ? (
-                    <div className="rounded-3xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
-                        {params.error}
-                    </div>
-                ) : null}
+                <ToastMessage message={params.message} error={params.error} />
 
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">
-                            My bookings
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">
+                                My bookings
+                            </p>
+
+                            <div className="group relative">
+                                <button
+                                    type="button"
+                                    aria-label="Cancellation policy"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-sky-300/30 bg-sky-400/10 text-xs font-black text-sky-100 transition hover:bg-sky-400/20"
+                                >
+                                    i
+                                </button>
+
+                                <div className="pointer-events-none absolute left-1/2 top-[calc(100%+0.75rem)] z-30 w-72 -translate-x-1/2 rounded-2xl border border-white/10 bg-zinc-950/95 px-4 py-3 text-left text-xs leading-5 text-zinc-200 opacity-0 shadow-2xl shadow-black/40 backdrop-blur-2xl transition group-hover:opacity-100">
+                                    Cancellations are allowed up to 6 hours before your court time.
+                                </div>
+                            </div>
+                        </div>
 
                         <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
                             Your Picko bookings
