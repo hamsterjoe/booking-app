@@ -3,10 +3,14 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+type Profile = {
+  full_name: string | null;
+  phone_number: string | null;
+};
+
 type Court = {
   id: string;
   name: string;
-  location_label: string | null;
 };
 
 type CourtSlot = {
@@ -16,18 +20,20 @@ type CourtSlot = {
   courts: Court | null;
 };
 
+type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
 type Booking = {
   id: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: BookingStatus;
   total_price_cents: number;
   court_slots: CourtSlot | null;
 };
 
 function formatBookingDate(dateTime: string) {
   return new Intl.DateTimeFormat("en-MY", {
-    weekday: "long",
+    weekday: "short",
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
     timeZone: "Asia/Kuala_Lumpur",
   }).format(new Date(dateTime));
@@ -46,7 +52,41 @@ function formatPrice(cents: number) {
   return new Intl.NumberFormat("en-MY", {
     style: "currency",
     currency: "MYR",
+    maximumFractionDigits: 0,
   }).format(cents / 100);
+}
+
+function getStatusLabel(status: BookingStatus) {
+  if (status === "confirmed") {
+    return "Upcoming";
+  }
+
+  if (status === "pending") {
+    return "Pending";
+  }
+
+  if (status === "completed") {
+    return "Completed";
+  }
+
+  return "Cancelled";
+}
+
+function getInitials(name: string | null | undefined, email: string | undefined) {
+  const source = name?.trim() || email || "Picko";
+
+  const words = source
+    .replace(/@.*/, "")
+    .split(/[\s._-]+/)
+    .filter(Boolean);
+
+  const initials = words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+
+  return initials || "P";
 }
 
 export default async function DashboardPage() {
@@ -63,6 +103,14 @@ export default async function DashboardPage() {
 
   const nowIso = new Date().toISOString();
 
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("full_name, phone_number")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profile = profileData as Profile | null;
+
   const { data: upcomingBookingsData, error: upcomingBookingsError } =
     await supabase
       .from("bookings")
@@ -71,22 +119,20 @@ export default async function DashboardPage() {
           id,
           status,
           total_price_cents,
-          court_slots (
+          court_slots!inner (
             id,
             start_time,
             end_time,
             courts (
               id,
-              name,
-              location_label
+              name
             )
           )
         `,
       )
       .eq("user_id", user.id)
       .in("status", ["pending", "confirmed"])
-      .gte("court_slots.start_time", nowIso)
-      .order("created_at", { ascending: false });
+      .gte("court_slots.start_time", nowIso);
 
   const upcomingBookings =
     (upcomingBookingsData ?? []) as unknown as Booking[];
@@ -102,147 +148,355 @@ export default async function DashboardPage() {
 
   const nextBooking = sortedUpcomingBookings[0];
 
+  const displayName =
+    profile?.full_name?.trim() || user.email?.split("@")[0] || "there";
+
+  const profileIsComplete = Boolean(
+    profile?.full_name?.trim() && profile?.phone_number?.trim(),
+  );
+
+  const initials = getInitials(profile?.full_name, user.email);
+
   return (
-    <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            Picko dashboard
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">
-            Welcome back
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-600">
-            You are logged in as{" "}
-            <span className="font-medium text-slate-900">{user.email}</span>.
-          </p>
-        </div>
-
-        <LogoutButton />
+    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black px-6 py-10 text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-10 h-72 w-72 rounded-full bg-lime-400/20 blur-3xl" />
+        <div className="absolute right-[-8%] top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute bottom-[-12%] left-1/3 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
 
-      {upcomingBookingsError ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
-          <h2 className="font-semibold">Could not load dashboard data</h2>
-          <p className="mt-2 text-sm">{upcomingBookingsError.message}</p>
-        </div>
-      ) : null}
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-lime-300/80">
+              Picko dashboard
+            </p>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Next booking
-          </h2>
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
+              Welcome back, {displayName}
+            </h1>
 
-          {nextBooking?.court_slots?.courts ? (
-            <div className="mt-4">
-              <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                {formatBookingDate(nextBooking.court_slots.start_time)}
-              </p>
-
-              <h3 className="mt-2 text-2xl font-bold text-slate-950">
-                {nextBooking.court_slots.courts.name}
-              </h3>
-
-              <p className="mt-2 text-sm text-slate-600">
-                {formatBookingTime(nextBooking.court_slots.start_time)} -{" "}
-                {formatBookingTime(nextBooking.court_slots.end_time)}
-              </p>
-
-              <p className="mt-2 text-sm text-slate-600">
-                Location:{" "}
-                {nextBooking.court_slots.courts.location_label ?? "Picko"}
-              </p>
-
-              <p className="mt-2 text-sm text-slate-600">
-                Price: {formatPrice(nextBooking.total_price_cents)}
-              </p>
-
-              <Link
-                href="/bookings"
-                className="mt-5 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                View all bookings
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-4">
-              <p className="text-sm text-slate-600">
-                You do not have any upcoming court bookings yet.
-              </p>
-
-              <Link
-                href="/bookings/new"
-                className="mt-5 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Book a court
-              </Link>
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Upcoming bookings
-          </h2>
-
-          <p className="mt-4 text-4xl font-bold text-slate-950">
-            {sortedUpcomingBookings.length}
-          </p>
-
-          <p className="mt-2 text-sm text-slate-600">
-            Confirmed or pending court bookings from now onward.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Quick actions
-          </h2>
-
-          <div className="mt-4 flex flex-col gap-3">
-            <Link
-              href="/bookings/new"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Book a court
-            </Link>
-
-            <Link
-              href="/bookings"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              My bookings
-            </Link>
-
-            <Link
-              href="/courts"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Browse courts
-            </Link>
-
-            <Link
-              href="/profile"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Profile settings
-            </Link>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60 sm:text-base">
+              Your next court session, booking shortcuts, and profile readiness
+              are all in one place.
+            </p>
           </div>
+
+          <LogoutButton />
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Account status
-          </h2>
+        {upcomingBookingsError ? (
+          <div className="rounded-3xl border border-red-400/30 bg-red-500/10 p-5 text-red-100 shadow-2xl shadow-red-950/20 backdrop-blur-xl">
+            <h2 className="font-semibold">Could not load dashboard data</h2>
+            <p className="mt-2 text-sm text-red-100/80">
+              {upcomingBookingsError.message}
+            </p>
+          </div>
+        ) : null}
 
-          <p className="mt-2 text-sm text-slate-600">
-            Your account is authenticated through Supabase Auth. Your bookings
-            are protected by row-level security so only you can view your own
-            booking records.
-          </p>
+        <div className="grid gap-5 lg:grid-cols-6">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl shadow-black/30 backdrop-blur-2xl lg:col-span-4">
+            <div className="absolute right-6 top-6 h-24 w-24 rounded-full bg-lime-300/20 blur-2xl" />
+
+            <div className="relative flex h-full flex-col justify-between gap-8">
+              <div>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-lg font-black text-lime-200 shadow-inner">
+                    {initials}
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-white/50">Signed in as</p>
+                    <p className="font-semibold text-white">{user.email}</p>
+                  </div>
+                </div>
+
+                <h2 className="mt-8 max-w-xl text-3xl font-black tracking-tight text-white sm:text-4xl">
+                  Ready for your next Picko session?
+                </h2>
+
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60">
+                  Book faster, track your upcoming games, and keep your playing
+                  profile ready for future match preferences.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
+                    Upcoming
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-white">
+                    {sortedUpcomingBookings.length}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
+                    Profile
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-white">
+                    {profileIsComplete ? "Complete" : "Needs info"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
+                    Skill score
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-white">
+                    Not set yet
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Link
+            href="/bookings/new"
+            className="group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-lime-300 via-emerald-300 to-cyan-300 p-6 text-slate-950 shadow-2xl shadow-lime-950/30 transition duration-300 hover:-translate-y-1 hover:shadow-lime-500/20 lg:col-span-2"
+          >
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/35 blur-2xl transition duration-300 group-hover:scale-125" />
+            <div className="absolute bottom-4 right-4 text-7xl font-black text-slate-950/10">
+              →
+            </div>
+
+            <div className="relative flex min-h-64 flex-col justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-slate-800/70">
+                  Main action
+                </p>
+
+                <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight">
+                  Book a Court Today
+                </h2>
+
+                <p className="mt-4 text-sm font-medium leading-6 text-slate-800/75">
+                  Find an available slot and lock in your next pickleball game.
+                </p>
+              </div>
+
+              <span className="mt-8 inline-flex w-fit rounded-full bg-black px-5 py-3 text-sm font-bold text-white transition group-hover:bg-white group-hover:text-slate-950">
+                Start booking
+              </span>
+            </div>
+          </Link>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
+                  Next booking
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight">
+                  Your next session
+                </h2>
+              </div>
+
+              {nextBooking ? (
+                <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-bold text-lime-700">
+                  {getStatusLabel(nextBooking.status)}
+                </span>
+              ) : null}
+            </div>
+
+            {nextBooking?.court_slots?.courts ? (
+              <div className="mt-6">
+                <h3 className="text-3xl font-black tracking-tight">
+                  {nextBooking.court_slots.courts.name}
+                </h3>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-slate-100 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Date
+                    </p>
+                    <p className="mt-2 font-bold text-slate-950">
+                      {formatBookingDate(nextBooking.court_slots.start_time)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-100 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Time
+                    </p>
+                    <p className="mt-2 font-bold text-slate-950">
+                      {formatBookingTime(nextBooking.court_slots.start_time)} -{" "}
+                      {formatBookingTime(nextBooking.court_slots.end_time)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white">
+                    {formatPrice(nextBooking.total_price_cents)}
+                  </p>
+
+                  <Link
+                    href={`/bookings/${nextBooking.id}?returnTo=${encodeURIComponent(
+                      "/dashboard",
+                    )}`}
+                    className="inline-flex justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                  >
+                    View details
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                <h3 className="text-xl font-black text-slate-950">
+                  No upcoming booking yet
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Your next booking will appear here once you reserve a court.
+                </p>
+
+                <Link
+                  href="/bookings/new"
+                  className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  Book your first slot
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div
+            className={`rounded-[2rem] border p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3 ${profileIsComplete
+                ? "border-white/10 bg-white/[0.08] text-white"
+                : "border-amber-300/30 bg-amber-300/15 text-amber-50"
+              }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p
+                  className={`text-sm font-bold uppercase tracking-[0.2em] ${profileIsComplete ? "text-lime-300" : "text-amber-200"
+                    }`}
+                >
+                  Profile
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black tracking-tight">
+                  {profileIsComplete
+                    ? "Your player profile"
+                    : "Complete your profile"}
+                </h2>
+              </div>
+
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${profileIsComplete
+                    ? "bg-lime-300/15 text-lime-200"
+                    : "bg-amber-200 text-amber-950"
+                  }`}
+              >
+                {profileIsComplete ? "Ready" : "Action needed"}
+              </span>
+            </div>
+
+            {profileIsComplete ? (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                    Name
+                  </p>
+                  <p className="mt-2 font-bold text-white">
+                    {profile?.full_name}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                    Phone
+                  </p>
+                  <p className="mt-2 font-bold text-white">
+                    {profile?.phone_number}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 sm:col-span-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                    Skill score
+                  </p>
+                  <p className="mt-2 font-bold text-white">Not set yet</p>
+                  <p className="mt-1 text-sm text-white/50">
+                    You can self-input this later in profile preferences.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <p className="text-sm leading-6 text-amber-50/80">
+                  Add your name and phone number so your booking details are
+                  ready before checkout.
+                </p>
+
+                <Link
+                  href="/profile"
+                  className="mt-5 inline-flex rounded-full bg-amber-200 px-5 py-3 text-sm font-black text-amber-950 transition hover:bg-white"
+                >
+                  Complete profile
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <Link
+            href="/bookings"
+            className="group rounded-[2rem] border border-sky-300/20 bg-sky-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:bg-sky-300/15 lg:col-span-2"
+          >
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-sky-200">
+              My bookings
+            </p>
+
+            <h2 className="mt-4 text-2xl font-black tracking-tight">
+              View your sessions
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-white/60">
+              Check upcoming, completed, cancelled, and all booking records.
+            </p>
+
+            <span className="mt-6 inline-flex text-sm font-bold text-sky-200 transition group-hover:translate-x-1">
+              Open bookings →
+            </span>
+          </Link>
+
+          <div className="rounded-[2rem] border border-fuchsia-300/20 bg-fuchsia-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-2">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-fuchsia-200">
+              Booking policy
+            </p>
+
+            <h2 className="mt-4 text-2xl font-black tracking-tight">
+              Plan with confidence
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-white/60">
+              Cancellations are allowed up to 6 hours before your court time.
+            </p>
+          </div>
+
+          <Link
+            href="/profile"
+            className="group rounded-[2rem] border border-lime-300/20 bg-lime-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:bg-lime-300/15 lg:col-span-2"
+          >
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-200">
+              Preferences
+            </p>
+
+            <h2 className="mt-4 text-2xl font-black tracking-tight">
+              Profile settings
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-white/60">
+              Keep your contact details ready. Skill preferences can be added in
+              a future profile update.
+            </p>
+
+            <span className="mt-6 inline-flex text-sm font-bold text-lime-200 transition group-hover:translate-x-1">
+              Manage profile →
+            </span>
+          </Link>
         </div>
       </div>
     </section>
