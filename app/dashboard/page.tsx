@@ -148,6 +148,21 @@ export default async function DashboardPage() {
 
   const nextBooking = sortedUpcomingBookings[0];
 
+  const nextSevenDaysEnd = new Date();
+  nextSevenDaysEnd.setDate(nextSevenDaysEnd.getDate() + 7);
+
+  const nextSevenDaysBookings = sortedUpcomingBookings.filter((booking) => {
+    const startTime = booking.court_slots?.start_time;
+
+    if (!startTime) {
+      return false;
+    }
+
+    return new Date(startTime).getTime() <= nextSevenDaysEnd.getTime();
+  });
+
+  const weeklyMeterValue = Math.min(nextSevenDaysBookings.length, 5);
+
   const displayName =
     profile?.full_name?.trim() || user.email?.split("@")[0] || "there";
 
@@ -158,12 +173,11 @@ export default async function DashboardPage() {
   const initials = getInitials(profile?.full_name, user.email);
 
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black px-6 py-10 text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-10%] top-10 h-72 w-72 rounded-full bg-lime-400/20 blur-3xl" />
-        <div className="absolute right-[-8%] top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute bottom-[-12%] left-1/3 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
-      </div>
+    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black px-6 pb-10 pt-24 text-white sm:pt-28">      <div className="pointer-events-none absolute inset-0">
+      <div className="absolute left-[-10%] top-10 h-72 w-72 rounded-full bg-lime-400/20 blur-3xl" />
+      <div className="absolute right-[-8%] top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+      <div className="absolute bottom-[-12%] left-1/3 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
+    </div>
 
       <div className="relative mx-auto flex max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -175,11 +189,6 @@ export default async function DashboardPage() {
             <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
               Welcome back, {displayName}
             </h1>
-
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60 sm:text-base">
-              Your next court session, booking shortcuts, and profile readiness
-              are all in one place.
-            </p>
           </div>
 
           <LogoutButton />
@@ -224,28 +233,49 @@ export default async function DashboardPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
-                    Upcoming
+                    Next 7 days
                   </p>
                   <p className="mt-2 text-3xl font-black text-white">
-                    {sortedUpcomingBookings.length}
+                    {nextSevenDaysBookings.length}
+                  </p>
+                  <p className="mt-1 text-xs text-white/45">
+                    Upcoming sessions
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
-                    Profile
+                    Next court
                   </p>
-                  <p className="mt-2 text-lg font-bold text-white">
-                    {profileIsComplete ? "Complete" : "Needs info"}
+                  <p className="mt-2 truncate text-lg font-bold text-white">
+                    {nextBooking?.court_slots?.courts?.name ?? "Not booked"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/45">
+                    {nextBooking?.court_slots?.start_time
+                      ? formatBookingDate(nextBooking.court_slots.start_time)
+                      : "Book when ready"}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/40">
-                    Skill score
+                    Weekly game meter
                   </p>
-                  <p className="mt-2 text-lg font-bold text-white">
-                    Not set yet
+
+                  <div className="mt-3 flex gap-1.5">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className={`h-8 flex-1 rounded-full ${index < weeklyMeterValue
+                          ? "bg-lime-300"
+                          : "bg-white/15"
+                          }`}
+                      />
+                    ))}
+                  </div>
+
+                  <p className="mt-2 text-xs text-white/45">
+                    Based on upcoming bookings
                   </p>
                 </div>
               </div>
@@ -254,31 +284,64 @@ export default async function DashboardPage() {
 
           <Link
             href="/bookings/new"
-            className="group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-lime-300 via-emerald-300 to-cyan-300 p-6 text-slate-950 shadow-2xl shadow-lime-950/30 transition duration-300 hover:-translate-y-1 hover:shadow-lime-500/20 lg:col-span-2"
+            className="group relative overflow-hidden rounded-[2rem] border border-blue-300/20 bg-slate-950 p-6 text-white shadow-2xl shadow-blue-950/40 transition duration-300 hover:-translate-y-1 hover:border-blue-300/35 hover:shadow-blue-500/25 lg:col-span-2"
           >
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/35 blur-2xl transition duration-300 group-hover:scale-125" />
-            <div className="absolute bottom-4 right-4 text-7xl font-black text-slate-950/10">
-              →
-            </div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.45),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(14,165,233,0.35),transparent_30%),radial-gradient(circle_at_70%_85%,rgba(37,99,235,0.5),transparent_34%),linear-gradient(135deg,rgba(2,6,23,1),rgba(15,23,42,0.96))]" />
+            <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-sky-300/25 blur-2xl transition duration-300 group-hover:scale-125" />
+            <div className="absolute bottom-[-3rem] left-[-3rem] h-44 w-44 rounded-full bg-blue-600/30 blur-2xl" />
+            <div className="absolute right-8 top-24 h-20 w-20 rounded-full bg-cyan-200/15 blur-xl" />
+            <div className="absolute inset-x-6 top-6 h-px bg-gradient-to-r from-transparent via-sky-200/60 to-transparent" />
 
-            <div className="relative flex min-h-64 flex-col justify-between">
+            <div className="relative flex min-h-64 flex-col justify-between gap-8">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.25em] text-slate-800/70">
-                  Main action
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200/25 bg-white/10 text-xl font-black text-sky-100 shadow-inner backdrop-blur">
+                    +
+                  </div>
 
-                <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight">
+                  <div className="rounded-full border border-sky-200/25 bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 shadow-inner backdrop-blur">
+                    Fast booking
+                  </div>
+                </div>
+
+                <h2 className="mt-7 text-4xl font-black leading-tight tracking-tight text-white drop-shadow-sm">
                   Book a Court Today
                 </h2>
 
-                <p className="mt-4 text-sm font-medium leading-6 text-slate-800/75">
-                  Find an available slot and lock in your next pickleball game.
+                <p className="mt-4 text-sm font-medium leading-6 text-sky-50/80">
+                  Choose your date, pick a slot, and confirm your next game in a
+                  few taps.
                 </p>
               </div>
 
-              <span className="mt-8 inline-flex w-fit rounded-full bg-black px-5 py-3 text-sm font-bold text-white transition group-hover:bg-white group-hover:text-slate-950">
-                Start booking
-              </span>
+              <div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-2xl border border-sky-200/20 bg-white/10 p-3 text-center shadow-inner backdrop-blur">
+                    <p className="text-lg font-black text-white">1</p>
+                    <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-sky-100/70">
+                      Date
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-sky-200/20 bg-white/10 p-3 text-center shadow-inner backdrop-blur">
+                    <p className="text-lg font-black text-white">2</p>
+                    <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-sky-100/70">
+                      Slot
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-sky-200/20 bg-white/10 p-3 text-center shadow-inner backdrop-blur">
+                    <p className="text-lg font-black text-white">3</p>
+                    <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-sky-100/70">
+                      Play
+                    </p>
+                  </div>
+                </div>
+
+                <span className="mt-5 inline-flex w-full justify-center rounded-full bg-white px-5 py-3 text-sm font-black text-gray-700 shadow-lg shadow-blue-950/20 transition group-hover:bg-sky-200 group-hover:text-slate-950">
+                  Start booking →
+                </span>
+              </div>
             </div>
           </Link>
 
@@ -364,8 +427,8 @@ export default async function DashboardPage() {
 
           <div
             className={`rounded-[2rem] border p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3 ${profileIsComplete
-                ? "border-white/10 bg-white/[0.08] text-white"
-                : "border-amber-300/30 bg-amber-300/15 text-amber-50"
+              ? "border-white/10 bg-white/[0.08] text-white"
+              : "border-amber-300/30 bg-amber-300/15 text-amber-50"
               }`}
           >
             <div className="flex items-start justify-between gap-4">
@@ -386,8 +449,8 @@ export default async function DashboardPage() {
 
               <span
                 className={`rounded-full px-3 py-1 text-xs font-bold ${profileIsComplete
-                    ? "bg-lime-300/15 text-lime-200"
-                    : "bg-amber-200 text-amber-950"
+                  ? "bg-lime-300/15 text-lime-200"
+                  : "bg-amber-200 text-amber-950"
                   }`}
               >
                 {profileIsComplete ? "Ready" : "Action needed"}
@@ -443,9 +506,9 @@ export default async function DashboardPage() {
 
           <Link
             href="/bookings"
-            className="group rounded-[2rem] border border-sky-300/20 bg-sky-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:bg-sky-300/15 lg:col-span-2"
+            className="group rounded-[2rem] border border-lime-300/20 bg-white/[0.08] p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-lime-300/35 hover:bg-lime-300/10 lg:col-span-2"
           >
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-sky-200">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-200">
               My bookings
             </p>
 
@@ -457,13 +520,13 @@ export default async function DashboardPage() {
               Check upcoming, completed, cancelled, and all booking records.
             </p>
 
-            <span className="mt-6 inline-flex text-sm font-bold text-sky-200 transition group-hover:translate-x-1">
+            <span className="mt-6 inline-flex text-sm font-bold text-lime-200 transition group-hover:translate-x-1">
               Open bookings →
             </span>
           </Link>
 
-          <div className="rounded-[2rem] border border-fuchsia-300/20 bg-fuchsia-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-2">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-fuchsia-200">
+          <div className="rounded-[2rem] border border-white/70 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-2">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
               Booking policy
             </p>
 
@@ -471,16 +534,16 @@ export default async function DashboardPage() {
               Plan with confidence
             </h2>
 
-            <p className="mt-3 text-sm leading-6 text-white/60">
+            <p className="mt-3 text-sm leading-6 text-slate-600">
               Cancellations are allowed up to 6 hours before your court time.
             </p>
           </div>
 
           <Link
             href="/profile"
-            className="group rounded-[2rem] border border-lime-300/20 bg-lime-300/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:bg-lime-300/15 lg:col-span-2"
+            className="group rounded-[2rem] border border-blue-200/20 bg-blue-200/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-blue-200/35 hover:bg-blue-200/15 lg:col-span-2"
           >
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-200">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-100">
               Preferences
             </p>
 
@@ -493,7 +556,7 @@ export default async function DashboardPage() {
               a future profile update.
             </p>
 
-            <span className="mt-6 inline-flex text-sm font-bold text-lime-200 transition group-hover:translate-x-1">
+            <span className="mt-6 inline-flex text-sm font-bold text-blue-100 transition group-hover:translate-x-1">
               Manage profile →
             </span>
           </Link>
