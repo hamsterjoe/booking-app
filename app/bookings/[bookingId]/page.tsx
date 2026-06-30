@@ -76,20 +76,87 @@ function formatDateTime(dateTime: string) {
     }).format(new Date(dateTime));
 }
 
-function getStatusClasses(status: BookingStatus) {
+function getStatusLabel(status: BookingStatus) {
     if (status === "confirmed") {
-        return "bg-green-50 text-green-700";
+        return "Upcoming";
     }
 
     if (status === "pending") {
-        return "bg-yellow-50 text-yellow-700";
+        return "Pending";
     }
 
-    if (status === "cancelled") {
-        return "bg-red-50 text-red-700";
+    if (status === "completed") {
+        return "Completed";
     }
 
-    return "bg-slate-100 text-slate-700";
+    return "Cancelled";
+}
+
+function getStatusTheme(status: BookingStatus) {
+    if (status === "confirmed") {
+        return {
+            pageAccent: "from-emerald-500/20 via-transparent to-transparent",
+            cardAccent: "border-l-4 border-l-lime-400",
+            pill: "bg-lime-400/25 text-lime-800 ring-1 ring-lime-400/50",
+            dot: "bg-lime-400",
+        };
+    }
+
+    if (status === "pending") {
+        return {
+            pageAccent: "from-amber-500/20 via-transparent to-transparent",
+            cardAccent: "border-l-4 border-l-amber-400",
+            pill: "bg-amber-400/25 text-amber-800 ring-1 ring-amber-400/50",
+            dot: "bg-amber-400",
+        };
+    }
+
+    if (status === "completed") {
+        return {
+            pageAccent: "from-sky-500/20 via-transparent to-transparent",
+            cardAccent: "border-l-4 border-l-sky-400",
+            pill: "bg-sky-400/25 text-sky-800 ring-1 ring-sky-400/50",
+            dot: "bg-sky-400",
+        };
+    }
+
+    return {
+        pageAccent: "from-red-500/20 via-transparent to-transparent",
+        cardAccent: "border-l-4 border-l-red-400",
+        pill: "bg-red-500/10 text-red-700 ring-1 ring-red-500/20",
+        dot: "bg-red-400",
+    };
+}
+
+function DetailItem({
+    label,
+    value,
+    highlight = false,
+}: {
+    label: string;
+    value: string;
+    highlight?: boolean;
+}) {
+    return (
+        <div
+            className={`rounded-2xl p-4 ${
+                highlight
+                    ? "border border-blue-500 bg-sky-50"
+                    : "bg-zinc-50"
+            }`}
+        >
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                {label}
+            </p>
+            <p
+                className={`mt-2 text-sm font-semibold ${
+                    highlight ? "break-all text-blue-950" : "text-zinc-950"
+                }`}
+            >
+                {value}
+            </p>
+        </div>
+    );
 }
 
 function isActiveBooking(status: BookingStatus) {
@@ -199,214 +266,241 @@ export default async function BookingDetailPage({
     const slot = booking.court_slots;
     const court = slot?.courts;
     const effectiveStatus = getEffectiveBookingStatus(booking);
+    const statusTheme = getStatusTheme(effectiveStatus);
 
     return (
-        <section className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-12">
-            <div>
-                <Link
-                    href={backHref}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                    ← Back to my bookings
-                </Link>
-
-                <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-blue-600">
-                    Booking details
-                </p>
-
-                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h1 className="text-3xl font-bold text-slate-950">
+        <section className="relative min-h-screen overflow-hidden bg-black px-6 pb-16 pt-36 text-white">
+            <div
+                aria-hidden="true"
+                className={`absolute inset-x-0 top-0 -z-0 h-96 bg-gradient-to-b ${statusTheme.pageAccent}`}
+            />
+    
+            <div className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8">
+                <div>
+                    <Link
+                        href={backHref}
+                        className="inline-flex text-sm font-semibold text-zinc-400 transition hover:text-white"
+                    >
+                        ← Back to my bookings
+                    </Link>
+                </div>
+    
+                <div className="text-center">
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">
+                        Booking details
+                    </p>
+    
+                    <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
                         Your Picko booking
                     </h1>
-
-                    <span
-                        className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                            effectiveStatus,
-                        )}`}
-                    >
-                        {effectiveStatus}
-                    </span>
+    
+                    <p className="mt-4 text-sm leading-7 text-zinc-400 sm:text-base">
+                        Full summary of your court, time, payment amount, and booking reference.
+                    </p>
                 </div>
-
-                <p className="mt-3 max-w-2xl text-slate-600">
-                    Review your court, time, price, and booking status.
-                </p>
-            </div>
-
-            {resolvedSearchParams.message ? (
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                    {resolvedSearchParams.message}
-                </div>
-            ) : null}
-
-            {resolvedSearchParams.error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {resolvedSearchParams.error}
-                </div>
-            ) : null}
-
-            <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                        Booking summary
-                    </h2>
-
-                    <div className="mt-5 grid gap-4 text-sm text-slate-600">
-                        <div>
-                            <p className="font-medium text-slate-900">Status</p>
-                            <p className="capitalize">{effectiveStatus}</p>
-                        </div>
-
-                        <div>
-                            <p className="font-medium text-slate-900">Price</p>
-                            <p>{formatPrice(booking.total_price_cents)}</p>
-                        </div>
-
-                        <div>
-                            <p className="font-medium text-slate-900">Created</p>
-                            <p>{formatDateTime(booking.created_at)}</p>
-                        </div>
-
-                        <div>
-                            <p className="font-medium text-slate-900">Booking ID</p>
-                            <p className="break-all">{booking.id}</p>
-                        </div>
+    
+                {resolvedSearchParams.message ? (
+                    <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                        {resolvedSearchParams.message}
                     </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                        Cancellation
-                    </h2>
-
-                    <div className="mt-5 text-sm text-slate-600">
-                        {canCancelBooking(booking) ? (
-                            <div className="space-y-4">
-                                <div className="rounded-xl bg-green-50 p-4 text-green-700">
-                                    This booking is still eligible for cancellation.
-                                </div>
-
-                                <form action={cancelBooking}>
-                                    <input type="hidden" name="bookingId" value={booking.id} />
-                                    <input type="hidden" name="redirectTarget" value="detail" />
-
-                                    <SubmitButton
-                                        pendingText="Cancelling..."
-                                        variant="danger"
-                                        className="w-full"
+                ) : null}
+    
+                {resolvedSearchParams.error ? (
+                    <div className="rounded-3xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+                        {resolvedSearchParams.error}
+                    </div>
+                ) : null}
+    
+                <article
+                    className={`overflow-hidden rounded-3xl border border-white/20 bg-white/95 shadow-2xl shadow-black/40 backdrop-blur-2xl ${statusTheme.cardAccent}`}
+                >
+                    <div className="border-b border-zinc-200 bg-zinc-100/80 px-6 py-5 backdrop-blur">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                        className={`h-2.5 w-2.5 rounded-full ${statusTheme.dot}`}
+                                    />
+    
+                                    <span
+                                        className={`rounded-full px-3 py-1 text-xs font-bold ${statusTheme.pill}`}
                                     >
-                                        Cancel booking
-                                    </SubmitButton>
-                                </form>
+                                        {getStatusLabel(effectiveStatus)}
+                                    </span>
+    
+                                    <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold text-white">
+                                        {formatPrice(booking.total_price_cents)}
+                                    </span>
+                                </div>
+    
+                                <h2 className="mt-3 truncate text-2xl font-bold text-zinc-950">
+                                    {court?.name ?? "Picko court"}
+                                </h2>
+    
+                                {slot ? (
+                                    <p className="mt-2 text-sm font-medium text-zinc-600">
+                                        {formatBookingDate(slot.start_time)} ·{" "}
+                                        {formatBookingTime(slot.start_time)} -{" "}
+                                        {formatBookingTime(slot.end_time)}
+                                    </p>
+                                ) : (
+                                    <p className="mt-2 text-sm font-medium text-zinc-600">
+                                        Slot details unavailable
+                                    </p>
+                                )}
                             </div>
-                        ) : isWithinCancellationCutoff(booking) ? (
-                            <div className="rounded-xl bg-yellow-50 p-4 text-yellow-700">
-                                This booking can no longer be cancelled because it starts
-                                within 6 hours.
-                            </div>
-                        ) : effectiveStatus === "cancelled" ? (
-                            <div className="rounded-xl bg-red-50 p-4 text-red-700">
-                                This booking has been cancelled.
-                            </div>
-                        ) : effectiveStatus === "completed" ? (
-                            <div className="rounded-xl bg-slate-100 p-4 text-slate-700">
-                                This booking is completed.
-                            </div>
-                        ) : (
-                            <div className="rounded-xl bg-slate-100 p-4 text-slate-700">
-                                Cancellation is not available for this booking.
-                            </div>
-                        )}
-
-                        <p className="mt-4">
-                            Cancellations are allowed up to 6 hours before your court time.
-                        </p>
+    
+                            <Link
+                                href="/bookings/new"
+                                className="inline-flex shrink-0 items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800"
+                            >
+                                Book another court
+                            </Link>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                        Slot details
-                    </h2>
-
-                    {slot ? (
-                        <div className="mt-5 grid gap-4 text-sm text-slate-600">
-                            <div>
-                                <p className="font-medium text-slate-900">Date</p>
-                                <p>{formatBookingDate(slot.start_time)}</p>
+    
+                    <div className="grid gap-8 p-6 lg:p-8">
+                        <section>
+                            <h3 className="text-lg font-bold text-zinc-950">
+                                Booking summary
+                            </h3>
+    
+                            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <DetailItem
+                                    label="Status"
+                                    value={getStatusLabel(effectiveStatus)}
+                                />
+    
+                                <DetailItem
+                                    label="Price"
+                                    value={formatPrice(booking.total_price_cents)}
+                                />
+    
+                                <DetailItem
+                                    label="Created"
+                                    value={formatDateTime(booking.created_at)}
+                                />
+    
+                                <DetailItem
+                                    label="Booking ID"
+                                    value={booking.id}
+                                    highlight
+                                />
                             </div>
-
-                            <div>
-                                <p className="font-medium text-slate-900">Time</p>
-                                <p>
-                                    {formatBookingTime(slot.start_time)} -{" "}
-                                    {formatBookingTime(slot.end_time)}
-                                </p>
+                        </section>
+    
+                        <section>
+                            <h3 className="text-lg font-bold text-zinc-950">
+                                Slot details
+                            </h3>
+    
+                            {slot ? (
+                                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    <DetailItem
+                                        label="Date"
+                                        value={formatBookingDate(slot.start_time)}
+                                    />
+    
+                                    <DetailItem
+                                        label="Time"
+                                        value={`${formatBookingTime(
+                                            slot.start_time,
+                                        )} - ${formatBookingTime(slot.end_time)}`}
+                                    />
+    
+                                    <DetailItem
+                                        label="Slot ID"
+                                        value={slot.id}
+                                        highlight
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
+                                    Slot details are unavailable.
+                                </div>
+                            )}
+                        </section>
+    
+                        <section>
+                            <h3 className="text-lg font-bold text-zinc-950">
+                                Court details
+                            </h3>
+    
+                            {court ? (
+                                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    <DetailItem label="Court" value={court.name} />
+    
+                                    <DetailItem
+                                        label="Location"
+                                        value={court.location_label ?? "Picko"}
+                                    />
+    
+                                    <DetailItem
+                                        label="Court type"
+                                        value={court.is_indoor ? "Indoor" : "Outdoor"}
+                                    />
+    
+                                    <DetailItem
+                                        label="Court price"
+                                        value={`${formatPrice(
+                                            court.price_per_hour_cents,
+                                        )} / hour`}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
+                                    Court details are unavailable.
+                                </div>
+                            )}
+                        </section>
+    
+                        {booking.notes ? (
+                            <section>
+                                <h3 className="text-lg font-bold text-zinc-950">
+                                    Booking notes
+                                </h3>
+    
+                                <div className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
+                                    {booking.notes}
+                                </div>
+                            </section>
+                        ) : null}
+    
+                        <section className="border-t border-zinc-200 pt-6">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <Link
+                                    href={backHref}
+                                    className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100"
+                                >
+                                    Back to my bookings
+                                </Link>
+    
+                                {canCancelBooking(booking) ? (
+                                    <form action={cancelBooking} className="sm:min-w-52">
+                                        <input
+                                            type="hidden"
+                                            name="bookingId"
+                                            value={booking.id}
+                                        />
+                                        <input
+                                            type="hidden"
+                                            name="redirectTarget"
+                                            value="detail"
+                                        />
+    
+                                        <SubmitButton
+                                            pendingText="Cancelling..."
+                                            variant="danger"
+                                            className="w-full rounded-xl border-2 border-red-500 bg-red-50 px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-100 disabled:border-red-200 disabled:bg-red-50 disabled:text-red-300"
+                                        >
+                                            Cancel booking
+                                        </SubmitButton>
+                                    </form>
+                                ) : null}
                             </div>
-
-                            <div>
-                                <p className="font-medium text-slate-900">Slot ID</p>
-                                <p className="break-all">{slot.id}</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="mt-5 text-sm text-slate-600">
-                            Slot details are unavailable.
-                        </p>
-                    )}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-950">
-                        Court details
-                    </h2>
-
-                    {court ? (
-                        <div className="mt-5 grid gap-4 text-sm text-slate-600">
-                            <div>
-                                <p className="font-medium text-slate-900">Court</p>
-                                <p>{court.name}</p>
-                            </div>
-
-                            <div>
-                                <p className="font-medium text-slate-900">Location</p>
-                                <p>{court.location_label ?? "Picko"}</p>
-                            </div>
-
-                            <div>
-                                <p className="font-medium text-slate-900">Court type</p>
-                                <p>{court.is_indoor ? "Indoor" : "Outdoor"}</p>
-                            </div>
-
-                            <div>
-                                <p className="font-medium text-slate-900">Court price</p>
-                                <p>{formatPrice(court.price_per_hour_cents)} / hour</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="mt-5 text-sm text-slate-600">
-                            Court details are unavailable.
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                    href={backHref}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                    Back to my bookings
-                </Link>
-
-                <Link
-                    href="/bookings/new"
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                    Book another court
-                </Link>
+                        </section>
+                    </div>
+                </article>
             </div>
         </section>
     );
