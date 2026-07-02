@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { updateProfile } from "@/app/profile/actions";
+import { AccountSecurityActions } from "@/components/profile/AccountSecurityActions";
 import { ProfileAvatarInput } from "@/components/profile/ProfileAvatarInput";
 import { ProfileDatePicker } from "@/components/profile/ProfileDatePicker";
 import { ProfileSelect } from "@/components/profile/ProfileSelect";
@@ -362,36 +363,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           </div>
         </form>
 
-        <div className="relative z-0 rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl">          <p className="text-sm font-black uppercase tracking-[0.25em] text-white/40">
-          Account security
-        </p>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-5">
-              <h3 className="text-lg font-black text-white">
-                Change password
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-white/50">
-                Update your login password securely.
-              </p>
-              <p className="mt-4 text-xs font-bold uppercase tracking-wide text-lime-200/70">
-                Coming in next mini milestone
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-red-300/20 bg-red-400/10 p-5">
-              <h3 className="text-lg font-black text-red-100">
-                Delete account
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-red-100/60">
-                Permanently delete your Picko account after confirmation.
-              </p>
-              <p className="mt-4 text-xs font-bold uppercase tracking-wide text-red-200/70">
-                Coming in next mini milestone
-              </p>
-            </div>
-          </div>
-        </div>
+        <AccountSecurityActions />
       </div>
     </section>
   );

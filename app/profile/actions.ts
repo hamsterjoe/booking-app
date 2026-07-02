@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const MAX_AVATAR_SIZE = 3 * 1024 * 1024;
 
@@ -218,4 +219,153 @@ export async function updateProfile(formData: FormData) {
   }
 
   redirect(buildProfileRedirectPath("message", "Profile updated."));
+}
+
+export async function updatePassword(formData: FormData) {
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!newPassword) {
+    redirect(
+      buildProfileRedirectPath("error", "Please enter a new password."),
+    );
+  }
+
+  if (newPassword.length < 6) {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        "Password must be at least 6 characters.",
+      ),
+    );
+  }
+
+  if (newPassword !== confirmPassword) {
+    redirect(
+      buildProfileRedirectPath("error", "Passwords do not match."),
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login?error=Please log in to update your password");
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        error.message ?? "Could not update your password.",
+      ),
+    );
+  }
+
+  redirect(buildProfileRedirectPath("message", "Password updated."));
+}
+
+export async function deleteAccount(formData: FormData) {
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+
+  if (confirmation !== "DELETE") {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        "Please type DELETE to confirm account deletion.",
+      ),
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login?error=Please log in to delete your account");
+  }
+
+  const supabaseAdmin = createSupabaseAdminClient();
+
+  const { data: activeBookings, error: activeBookingsError } =
+    await supabaseAdmin
+      .from("bookings")
+      .select("slot_id")
+      .eq("user_id", user.id)
+      .in("status", ["pending", "confirmed"]);
+
+  if (activeBookingsError) {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        activeBookingsError.message ??
+          "Could not prepare your account for deletion.",
+      ),
+    );
+  }
+
+  const slotIds = Array.from(
+    new Set(
+      (activeBookings ?? [])
+        .map((booking) => booking.slot_id)
+        .filter(Boolean),
+    ),
+  );
+
+  if (slotIds.length > 0) {
+    const { error: releaseSlotsError } = await supabaseAdmin
+      .from("court_slots")
+      .update({ is_available: true })
+      .in("id", slotIds);
+
+    if (releaseSlotsError) {
+      redirect(
+        buildProfileRedirectPath(
+          "error",
+          releaseSlotsError.message ??
+            "Could not release your booked slots before account deletion.",
+        ),
+      );
+    }
+  }
+
+  const { data: avatarFiles } = await supabaseAdmin.storage
+    .from("profile-avatars")
+    .list(user.id);
+
+  const avatarPaths =
+    avatarFiles?.map((file) => `${user.id}/${file.name}`) ?? [];
+
+  if (avatarPaths.length > 0) {
+    await supabaseAdmin.storage.from("profile-avatars").remove(avatarPaths);
+  }
+
+  await supabaseAdmin.from("profiles").delete().eq("id", user.id);
+
+  const { error: deleteUserError } =
+    await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+  if (deleteUserError) {
+    redirect(
+      buildProfileRedirectPath(
+        "error",
+        deleteUserError.message ?? "Could not delete your account.",
+      ),
+    );
+  }
+
+  await supabase.auth.signOut();
+
+  redirect("/login?message=Your account has been deleted.");
 }
