@@ -294,10 +294,6 @@ export function AccountSecurityActions() {
           <div className="w-full max-w-lg overflow-hidden rounded-[2rem] border border-red-300/20 bg-slate-950 p-6 text-white shadow-2xl shadow-red-950/40">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.25em] text-red-200/70">
-                  Destructive action
-                </p>
-
                 <h2 className="mt-3 text-3xl font-black tracking-tight text-red-100">
                   Delete account
                 </h2>
