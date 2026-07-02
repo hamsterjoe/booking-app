@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Profile = {
@@ -191,8 +190,6 @@ export default async function DashboardPage() {
               Welcome back, {displayName}
             </h1>
           </div>
-
-          <LogoutButton />
         </div>
 
         {upcomingBookingsError ? (
