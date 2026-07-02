@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -290,13 +291,18 @@ export default async function DashboardPage() {
             <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-sky-300/25 blur-2xl transition duration-300 group-hover:scale-125" />
             <div className="absolute bottom-[-3rem] left-[-3rem] h-44 w-44 rounded-full bg-blue-600/30 blur-2xl" />
             <div className="absolute right-8 top-24 h-20 w-20 rounded-full bg-cyan-200/15 blur-xl" />
-            <div className="absolute inset-x-6 top-6 h-px bg-gradient-to-r from-transparent via-sky-200/60 to-transparent" />
 
             <div className="relative flex min-h-64 flex-col justify-between gap-8">
               <div>
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200/25 bg-white/10 text-xl font-black text-sky-100 shadow-inner backdrop-blur">
-                    +
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200/25 bg-white/10 shadow-inner backdrop-blur">
+                    <Image
+                      src="/assets/icons/booking-cta.svg"
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="h-6 w-6"
+                    />
                   </div>
 
                   <div className="rounded-full border border-sky-200/25 bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 shadow-inner backdrop-blur">
@@ -345,220 +351,302 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
-                  Next booking
-                </p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight">
-                  Your next session
-                </h2>
-              </div>
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-lime-300/25 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-[-4rem] left-[-3rem] h-40 w-40 rounded-full bg-sky-300/20 blur-3xl" />
 
-              {nextBooking ? (
-                <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-bold text-lime-700">
-                  {getStatusLabel(nextBooking.status)}
-                </span>
-              ) : null}
-            </div>
-
-            {nextBooking?.court_slots?.courts ? (
-              <div className="mt-6">
-                <h3 className="text-3xl font-black tracking-tight">
-                  {nextBooking.court_slots.courts.name}
-                </h3>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-slate-100 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Date
-                    </p>
-                    <p className="mt-2 font-bold text-slate-950">
-                      {formatBookingDate(nextBooking.court_slots.start_time)}
-                    </p>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950">
+                    <Image
+                      src="/assets/icons/next-booking.svg"
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="h-5 w-5"
+                    />
                   </div>
 
-                  <div className="rounded-2xl bg-slate-100 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Time
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
+                      Next booking
                     </p>
-                    <p className="mt-2 font-bold text-slate-950">
-                      {formatBookingTime(nextBooking.court_slots.start_time)} -{" "}
-                      {formatBookingTime(nextBooking.court_slots.end_time)}
-                    </p>
+                    <h2 className="mt-2 text-2xl font-black tracking-tight">
+                      Your next session
+                    </h2>
                   </div>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white">
-                    {formatPrice(nextBooking.total_price_cents)}
+                {nextBooking ? (
+                  <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-bold text-lime-700">
+                    {getStatusLabel(nextBooking.status)}
+                  </span>
+                ) : null}
+              </div>
+
+              {nextBooking?.court_slots?.courts ? (
+                <div className="mt-6">
+                  <h3 className="text-3xl font-black tracking-tight">
+                    {nextBooking.court_slots.courts.name}
+                  </h3>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-slate-100 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Date
+                      </p>
+                      <p className="mt-2 font-bold text-slate-950">
+                        {formatBookingDate(nextBooking.court_slots.start_time)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-100 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Time
+                      </p>
+                      <p className="mt-2 font-bold text-slate-950">
+                        {formatBookingTime(nextBooking.court_slots.start_time)} -{" "}
+                        {formatBookingTime(nextBooking.court_slots.end_time)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white">
+                      {formatPrice(nextBooking.total_price_cents)}
+                    </p>
+
+                    <Link
+                      href={`/bookings/${nextBooking.id}?returnTo=${encodeURIComponent(
+                        "/dashboard",
+                      )}`}
+                      className="inline-flex justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                    >
+                      View details
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                  <h3 className="text-xl font-black text-slate-950">
+                    No upcoming booking yet
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Your next booking will appear here once you reserve a court.
                   </p>
 
                   <Link
-                    href={`/bookings/${nextBooking.id}?returnTo=${encodeURIComponent(
-                      "/dashboard",
-                    )}`}
-                    className="inline-flex justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                    href="/bookings/new"
+                    className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
                   >
-                    View details
+                    Book your first slot
                   </Link>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                <h3 className="text-xl font-black text-slate-950">
-                  No upcoming booking yet
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Your next booking will appear here once you reserve a court.
-                </p>
-
-                <Link
-                  href="/bookings/new"
-                  className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                >
-                  Book your first slot
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
+
           <div
-            className={`rounded-[2rem] border p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3 ${profileIsComplete
+            className={`relative overflow-hidden rounded-[2rem] border p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-3 ${profileIsComplete
               ? "border-white/10 bg-white/[0.08] text-white"
               : "border-amber-300/30 bg-amber-300/15 text-amber-50"
               }`}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p
-                  className={`text-sm font-bold uppercase tracking-[0.2em] ${profileIsComplete ? "text-lime-300" : "text-amber-200"
+
+            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-lime-300/15 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-[-4rem] left-[-3rem] h-44 w-44 rounded-full bg-blue-300/10 blur-3xl" />
+
+            <div className="relative z-10">
+
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
+                    <Image
+                      src="/assets/icons/profile-summary.svg"
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="h-5 w-5"
+                    />
+                  </div>
+
+                  <div>
+                    <p
+                      className={`text-sm font-bold uppercase tracking-[0.2em] ${profileIsComplete ? "text-lime-300" : "text-amber-200"
+                        }`}
+                    >
+                      Profile
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black tracking-tight">
+                      {profileIsComplete
+                        ? "Your player profile"
+                        : "Complete your profile"}
+                    </h2>
+                  </div>
+                </div>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${profileIsComplete
+                    ? "bg-lime-300/15 text-lime-200"
+                    : "bg-amber-200 text-amber-950"
                     }`}
                 >
-                  Profile
-                </p>
-
-                <h2 className="mt-2 text-2xl font-black tracking-tight">
-                  {profileIsComplete
-                    ? "Your player profile"
-                    : "Complete your profile"}
-                </h2>
+                  {profileIsComplete ? "Ready" : "Action needed"}
+                </span>
               </div>
 
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-bold ${profileIsComplete
-                  ? "bg-lime-300/15 text-lime-200"
-                  : "bg-amber-200 text-amber-950"
-                  }`}
-              >
-                {profileIsComplete ? "Ready" : "Action needed"}
-              </span>
+              {profileIsComplete ? (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                      Name
+                    </p>
+                    <p className="mt-2 font-bold text-white">
+                      {profile?.full_name}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                      Phone
+                    </p>
+                    <p className="mt-2 font-bold text-white">
+                      {profile?.phone_number}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 sm:col-span-2">
+                    <p className="text-xs font-bold uppercase tracking-wide text-white/40">
+                      Skill score
+                    </p>
+                    <p className="mt-2 font-bold text-white">Not set yet</p>
+                    <p className="mt-1 text-sm text-white/50">
+                      You can self-input this later in profile preferences.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <p className="text-sm leading-6 text-amber-50/80">
+                    Add your name and phone number so your booking details are
+                    ready before checkout.
+                  </p>
+
+                  <Link
+                    href="/profile"
+                    className="mt-5 inline-flex rounded-full bg-amber-200 px-5 py-3 text-sm font-black text-amber-950 transition hover:bg-white"
+                  >
+                    Complete profile
+                  </Link>
+                </div>
+              )}
             </div>
-
-            {profileIsComplete ? (
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
-                    Name
-                  </p>
-                  <p className="mt-2 font-bold text-white">
-                    {profile?.full_name}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
-                    Phone
-                  </p>
-                  <p className="mt-2 font-bold text-white">
-                    {profile?.phone_number}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 sm:col-span-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-white/40">
-                    Skill score
-                  </p>
-                  <p className="mt-2 font-bold text-white">Not set yet</p>
-                  <p className="mt-1 text-sm text-white/50">
-                    You can self-input this later in profile preferences.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-6">
-                <p className="text-sm leading-6 text-amber-50/80">
-                  Add your name and phone number so your booking details are
-                  ready before checkout.
-                </p>
-
-                <Link
-                  href="/profile"
-                  className="mt-5 inline-flex rounded-full bg-amber-200 px-5 py-3 text-sm font-black text-amber-950 transition hover:bg-white"
-                >
-                  Complete profile
-                </Link>
-              </div>
-            )}
           </div>
 
           <Link
             href="/bookings"
-            className="group rounded-[2rem] border border-lime-300/20 bg-white/[0.08] p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-lime-300/35 hover:bg-lime-300/10 lg:col-span-2"
+            className="group relative overflow-hidden rounded-[2rem] border border-lime-300/20 bg-white/[0.08] p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-lime-300/35 hover:bg-lime-300/10 lg:col-span-2"
           >
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-lime-200">
-              My bookings
-            </p>
+            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-lime-300/15 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-[-3rem] left-[-3rem] h-36 w-36 rounded-full bg-emerald-300/10 blur-3xl" />
 
-            <h2 className="mt-4 text-2xl font-black tracking-tight">
-              View your sessions
-            </h2>
+            <div className="relative z-10">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-lime-200/15 bg-white/10">
+                <Image
+                  src="/assets/icons/my-bookings.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="h-5 w-5"
+                />
+              </div>
 
-            <p className="mt-3 text-sm leading-6 text-white/60">
-              Check upcoming, completed, cancelled, and all booking records.
-            </p>
+              <p className="mt-5 text-sm font-bold uppercase tracking-[0.2em] text-lime-200">
+                My bookings
+              </p>
 
-            <span className="mt-6 inline-flex text-sm font-bold text-lime-200 transition group-hover:translate-x-1">
-              Open bookings →
-            </span>
+              <h2 className="mt-4 text-2xl font-black tracking-tight">
+                View your sessions
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-white/60">
+                Check upcoming, completed, cancelled, and all booking records.
+              </p>
+
+              <span className="mt-6 inline-flex text-sm font-bold text-lime-200 transition group-hover:translate-x-1">
+                Open bookings →
+              </span>
+            </div>
           </Link>
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-2">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
-              Booking policy
-            </p>
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 p-6 text-slate-950 shadow-2xl shadow-black/20 backdrop-blur-2xl lg:col-span-2">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-lime-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-[-4rem] left-[-3rem] h-40 w-40 rounded-full bg-blue-300/15 blur-3xl" />
 
-            <h2 className="mt-4 text-2xl font-black tracking-tight">
-              Plan with confidence
-            </h2>
+            <div className="relative z-10">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950">
+                <Image
+                  src="/assets/icons/booking-policy.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="h-5 w-5"
+                />
+              </div>
 
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Cancellations are allowed up to 6 hours before your court time.
-            </p>
+              <p className="mt-5 text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">
+                Booking policy
+              </p>
+
+              <h2 className="mt-4 text-2xl font-black tracking-tight">
+                Plan with confidence
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Cancellations are allowed up to 6 hours before your court time.
+              </p>
+            </div>
           </div>
 
           <Link
             href="/profile"
-            className="group rounded-[2rem] border border-blue-200/20 bg-blue-200/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-blue-200/35 hover:bg-blue-200/15 lg:col-span-2"
+            className="group relative overflow-hidden rounded-[2rem] border border-blue-200/20 bg-blue-200/10 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-blue-200/35 hover:bg-blue-200/15 lg:col-span-2"
           >
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-100">
-              Preferences
-            </p>
+            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-blue-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-[-3rem] left-[-3rem] h-36 w-36 rounded-full bg-white/10 blur-3xl" />
 
-            <h2 className="mt-4 text-2xl font-black tracking-tight">
-              Profile settings
-            </h2>
+            <div className="relative z-10">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-100/20 bg-white/10">
+                <Image
+                  src="/assets/icons/profile-preferences.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="h-5 w-5"
+                />
+              </div>
 
-            <p className="mt-3 text-sm leading-6 text-white/60">
-              Keep your contact details ready. Skill preferences can be added in
-              a future profile update.
-            </p>
+              <p className="mt-5 text-sm font-bold uppercase tracking-[0.2em] text-blue-100">
+                Preferences
+              </p>
 
-            <span className="mt-6 inline-flex text-sm font-bold text-blue-100 transition group-hover:translate-x-1">
-              Manage profile →
-            </span>
+              <h2 className="mt-4 text-2xl font-black tracking-tight">
+                Profile settings
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-white/60">
+                Keep your contact details ready. Skill preferences can be added
+                in a future profile update.
+              </p>
+
+              <span className="mt-6 inline-flex text-sm font-bold text-blue-100 transition group-hover:translate-x-1">
+                Manage profile →
+              </span>
+            </div>
           </Link>
         </div>
       </div>
