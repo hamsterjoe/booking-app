@@ -6,6 +6,7 @@ import { ProfileAvatarInput } from "@/components/profile/ProfileAvatarInput";
 import { ProfileDatePicker } from "@/components/profile/ProfileDatePicker";
 import { ProfileSelect } from "@/components/profile/ProfileSelect";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { ToastMessage } from "@/components/ui/ToastMessage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type ProfilePageProps = {
@@ -142,9 +143,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const displayName =
     currentProfile?.full_name?.trim() || user.email?.split("@")[0] || "Player";
   const isAdmin = currentProfile?.role === "admin";
+  const toastError = params.error ?? profileError?.message;
 
   return (
     <section className="relative overflow-x-hidden bg-black px-6 pb-8 pt-24 text-white sm:pt-28">
+      <ToastMessage message={params.message} error={toastError} />
+      
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-16 h-72 w-72 rounded-full bg-lime-300/15 blur-3xl" />
         <div className="absolute right-[-12%] top-32 h-80 w-80 rounded-full bg-blue-500/15 blur-3xl" />
@@ -169,24 +173,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             </span>
           ) : null}
         </div>
-
-        {params.message ? (
-          <div className="rounded-3xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm font-semibold text-lime-100 backdrop-blur-xl">
-            {params.message}
-          </div>
-        ) : null}
-
-        {params.error ? (
-          <div className="rounded-3xl border border-red-300/20 bg-red-400/10 p-4 text-sm font-semibold text-red-100 backdrop-blur-xl">
-            {params.error}
-          </div>
-        ) : null}
-
-        {profileError ? (
-          <div className="rounded-3xl border border-red-300/20 bg-red-400/10 p-4 text-sm font-semibold text-red-100 backdrop-blur-xl">
-            {profileError.message}
-          </div>
-        ) : null}
 
         <form
           action={updateProfile}

@@ -53,21 +53,19 @@ export function ToastMessage({ message, error }: ToastMessageProps) {
   }
 
   return (
-    <div className="fixed right-6 top-28 z-[100] w-[min(24rem,calc(100vw-3rem))]">
+    <div className="fixed right-6 top-28 z-[100] w-[min(24rem,calc(100vw-3rem))] sm:right-8 lg:right-[calc((100vw-72rem)/2+1.5rem)]">
       <div
-        className={`rounded-2xl border p-4 shadow-2xl shadow-black/30 backdrop-blur-2xl ${
-          type === "error"
+        className={`rounded-2xl border p-4 shadow-2xl shadow-black/30 backdrop-blur-2xl ${type === "error"
             ? "border-red-400/30 bg-red-500/15 text-red-100"
             : "border-emerald-400/30 bg-emerald-500/15 text-emerald-100"
-        }`}
+          }`}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-              type === "error"
+            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black ${type === "error"
                 ? "bg-red-400/20 text-red-100"
                 : "bg-emerald-400/20 text-emerald-100"
-            }`}
+              }`}
           >
             {type === "error" ? "!" : "✓"}
           </div>
