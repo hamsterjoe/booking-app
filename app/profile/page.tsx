@@ -26,12 +26,36 @@ type Profile = {
 };
 
 const countryCodeOptions = [
-  { label: "Malaysia (+60)", value: "+60" },
-  { label: "Singapore (+65)", value: "+65" },
-  { label: "Indonesia (+62)", value: "+62" },
-  { label: "Thailand (+66)", value: "+66" },
-  { label: "United States (+1)", value: "+1" },
-  { label: "United Kingdom (+44)", value: "+44" },
+  {
+    label: "Malaysia",
+    value: "+60",
+    description: "+60",
+  },
+  {
+    label: "Singapore",
+    value: "+65",
+    description: "+65",
+  },
+  {
+    label: "Indonesia",
+    value: "+62",
+    description: "+62",
+  },
+  {
+    label: "Thailand",
+    value: "+66",
+    description: "+66",
+  },
+  {
+    label: "United States",
+    value: "+1",
+    description: "+1",
+  },
+  {
+    label: "United Kingdom",
+    value: "+44",
+    description: "+44",
+  },
 ];
 
 const genderOptions = [
@@ -119,23 +143,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const isAdmin = currentProfile?.role === "admin";
 
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-black px-6 pb-14 pt-24 text-white sm:pt-28">
+    <section className="relative overflow-x-hidden bg-black px-6 pb-8 pt-24 text-white sm:pt-28">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-16 h-72 w-72 rounded-full bg-lime-300/15 blur-3xl" />
         <div className="absolute right-[-12%] top-32 h-80 w-80 rounded-full bg-blue-500/15 blur-3xl" />
-        <div className="absolute bottom-[-16%] left-1/3 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto flex max-w-5xl flex-col gap-6">
+      <div className="relative mx-auto flex max-w-5xl flex-col gap-6 pb-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link
-              href="/dashboard"
-              className="text-sm font-bold text-lime-200 transition hover:text-lime-100"
-            >
-              ← Back to dashboard
-            </Link>
-
             <p className="mt-6 text-sm font-black uppercase tracking-[0.35em] text-lime-300/80">
               Profile personalisation
             </p>
@@ -172,8 +189,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
         <form
           action={updateProfile}
-          encType="multipart/form-data"
-          className="relative overflow-visible rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-8"
+          noValidate
+          className="relative z-10 overflow-visible rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-8"
         >
           <input type="hidden" name="returnTo" value={safeReturnTo} />
 
@@ -234,11 +251,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                     id="fullName"
                     name="fullName"
                     type="text"
-                    required
                     defaultValue={currentProfile?.full_name ?? ""}
                     placeholder="Your name"
+                    aria-describedby="fullNameHelp"
                     className="mt-2 min-h-11 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none transition placeholder:text-white/30 hover:bg-white/15 focus:border-lime-300/50"
                   />
+
+                  <p id="fullNameHelp" className="mt-2 text-xs text-white/35">
+                    Required for bookings and admin records.
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -247,32 +268,21 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   </label>
 
                   <div className="mt-2 grid gap-3 sm:grid-cols-[190px_1fr]">
-                    <select
-                      id="countryCode"
+                    <ProfileSelect
                       name="countryCode"
                       defaultValue={phoneParts.countryCode}
-                      className="min-h-11 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none transition hover:bg-white/15 focus:border-lime-300/50"
-                    >
-                      {countryCodeOptions.map((option) => (
-                        <option
-                          key={option.value}
-                          value={option.value}
-                          className="bg-slate-950"
-                        >
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Select country"
+                      options={countryCodeOptions}
+                    />
 
                     <input
                       id="phoneLocalNumber"
                       name="phoneLocalNumber"
                       type="tel"
-                      required
                       defaultValue={phoneParts.localNumber}
                       placeholder="123456789"
                       inputMode="numeric"
-                      pattern="[0-9\s-]{7,15}"
+                      aria-describedby="phoneHelp"
                       className="min-h-11 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none transition placeholder:text-white/30 hover:bg-white/15 focus:border-lime-300/50"
                     />
                   </div>
@@ -341,8 +351,9 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 </p>
 
                 <SubmitButton
+                  variant="secondary"
                   pendingText="Saving profile..."
-                  className="min-h-11 rounded-full bg-white px-7 text-slate-950 hover:bg-lime-200 disabled:bg-white/40"
+                  className="min-h-11 rounded-full border-0 bg-white px-7 text-slate-950 hover:bg-lime-200 disabled:bg-white/40 disabled:text-slate-500"
                 >
                   Save profile
                 </SubmitButton>
@@ -351,10 +362,9 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           </div>
         </form>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl">
-          <p className="text-sm font-black uppercase tracking-[0.25em] text-white/40">
-            Account security
-          </p>
+        <div className="relative z-0 rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-black/20 backdrop-blur-2xl">          <p className="text-sm font-black uppercase tracking-[0.25em] text-white/40">
+          Account security
+        </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-3xl border border-white/10 bg-white/10 p-5">
